@@ -5,7 +5,7 @@ const wsCandles = new WebSocket(`${process.env.STREAM_URL}btcusdt@kline_1m`) //s
 const api = require("./api");
 const instrumentos= require("./instrumentos")
 let posicionAbierta= false;
-/* ws.onmessage= (event) => {  //web socket tiene conexion constante y me envia la infoen el tiemp estipulado
+/*ws.onmessage= (event) => {  //web socket tiene conexion constante y me envia la infoen el tiemp estipulado
     //console. clear();
     
     const datos = JSON.parse(event.data);
@@ -50,16 +50,21 @@ let posicionAbierta= false;
 
 } */
 
-
+var i=0;
 //-------------------stream candles -----------------------------
-/* wsCandles.onmessage= (event) => {  //web socket tiene conexion constante y me envia la infoen el tiemp estipulado
+wsCandles.onmessage= (event) => {  //web socket tiene conexion constante y me envia la infoen el tiemp estipulado
     //console. clear();
-    
-    
+    let datos = JSON.parse(event.data)
+   if(datos.k.x==true){
+       console.log("Esta vela esta cerrada chuki chuku chu")
+       i=0;
+    }
     //console.log(event.data); //todos los datos
-    console.log(event.data)
+    i++
     
-} */
+    console.log(i)
+    
+}
 
 
 

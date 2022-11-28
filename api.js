@@ -50,9 +50,7 @@ async function recuperarHistoricoVelas(symbol, interval){
 
 
 
-//RSI> se saca sobre 14 cierres de mercado (necesarios 15 para calcular)
-// si < 30 sobrevendido ---- si >70 sobrecomprado ------ = 50 mercado lateralizado
-// precios desde mas viejo a mas nuevo...cotejar como vienen de la api
+
 
 
 module.exports ={
