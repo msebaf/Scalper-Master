@@ -3,7 +3,7 @@
 //RSI> se saca sobre 14 cierres de mercado (necesarios 15 para calcular)
 // si < 30 sobrevendido ---- si >70 sobrecomprado ------ = 50 mercado lateralizado
 // precios desde mas viejo a mas nuevo...cotejar como vienen de la api
-async function calculadoraRSI(arrayListaDeprecios, datosStream){
+function calculadoraRSI(arrayListaDeprecios, datosStream){
     if(datosStream){
         arrayListaDeprecios.push(datosStream);
         if(arrayListaDeprecios>15){
@@ -31,15 +31,15 @@ async function calculadoraRSI(arrayListaDeprecios, datosStream){
         }
         
     }
-    console.log(sumaCierresNegativos)
-    console.log(sumaCierresPositivos)
+    //console.log(sumaCierresNegativos)
+    //console.log(sumaCierresPositivos)
     avgU= sumaCierresPositivos/periodo;
-    console.log("avgU " + avgU)
+    //console.log("avgU " + avgU)
     avgD= sumaCierresNegativos/periodo;
-    console.log("avgD " + avgD)
+    //console.log("avgD " + avgD)
     try{
     relativeStrenght= avgU/avgD;
-    console.log("RS "+ relativeStrenght)
+    //console.log("RS "+ relativeStrenght)
     RelativeSI= 100-(100/(1+relativeStrenght));
     }
     catch{

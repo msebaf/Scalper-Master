@@ -29,12 +29,11 @@ async function abrirPosicion(symbol, quantity, side = "BUY"){
 
 
 
-async function recuperarHistoricoVelas(symbol, interval){
-    const signature = crypto.createHmac('sha256', apiSecret)
-                            .update(`${new URLSearchParams({symbol, interval}).toString()}`)
-                            .digest('hex');
+async function recuperarHistoricoVelas(symbol, interval, limit){
+    const timestamp = Date.now();
+    
                 
-    const data = {symbol, interval, signature};
+    const data = {symbol, interval, limit};
     const queryString = `?${new URLSearchParams(data).toString()}`;
 
     const resultado = await axios({
