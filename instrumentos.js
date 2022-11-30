@@ -62,9 +62,9 @@ async function mediaMovil(arrayDePrecios){
 
 }  
 
-async function mediaMovilPonderada(arrayDePrecios){
+function mediaMovilPonderada(arrayDePrecios){
     //mayot prioridad a precios mas recientes
-    let precios = await arrayDePrecios;
+    let precios = arrayDePrecios;
     let factorPonderacion =0;
     for (let k = 0; k < precios.length; k++) {
        factorPonderacion +=k+1;

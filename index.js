@@ -5,10 +5,13 @@ const wsCandles = new WebSocket(`${process.env.STREAM_URL}btcusdt@kline_1m`) //s
 
 const api = require("./api");
 const instrumentos= require("./instrumentos")
-let posicionAbierta= false;
+const funciones = require("./funciones")
+
 
 
 let candels;
+let precio;
+let contadorInicial=60;
 //-------------------variables 24hs
 let tendencia24Hs;
 let valoresCalculo24hs=[]
@@ -17,6 +20,7 @@ let minimo24;
 let maximosMayoresAlMAximo24=0;
 let minimosMenoresAlMinimo24=0;
 let entreRango24=0;
+let mediaPonderada24H;
 //------------------------variables 5 horas
 let tendencia5Hs;
 let valoresCalculo5hs=[]
@@ -25,6 +29,7 @@ let minimo5;
 let maximosMayoresAlMAximo5=0;
 let minimosMenoresAlMinimo5=0;
 let entreRango5=0;
+let mediaPonderada5H;
 //------------------------variables 2hs
 let tendencia2Hs;
 let valoresCalculo2hs=[]
@@ -33,17 +38,30 @@ let minimo2;
 let maximosMayoresAlMAximo2=0;
 let minimosMenoresAlMinimo2=0;
 let entreRango2=0;
+let mediaPonderada2H;
 //---------------------variables 1h
 let tendencia1H;
-let valoresCalculo1hs=[]
+var valoresCalculo1hs=[]
 let maximo1;
 let minimo1;
 let maximosMayoresAlMAximo1=0;
 let minimosMenoresAlMinimo1=0;
 let entreRango1=0;
+let mediaPonderada1H;
+//---------------------minuto
+let tendenciaM;
+var valoresCalculoM=[]
+let maximoM =0;
+let minimoM=99999999;
+let maximosMayoresAlMAximoM=0;
+let minimosMenoresAlMinimoM=0;
+let entreRangoM=0;
+let mediaPonderada1M;
 //------datos rsi---
 let datosParaRSI= [];
 var RSI;
+
+
 
 async function calcularTendencias(){
     candels= await api.recuperarHistoricoVelas("btcusdt", "1m", 1500);
@@ -91,12 +109,12 @@ async function calcularTendencias(){
     else{
         tendencia24Hs="LATERAL"
     }
-console.log("---------24 hs---------------------")
+/* console.log("---------24 hs---------------------")
 console.log(valoresCalculo24hs)
 console.log(maximosMayoresAlMAximo24)
 console.log(minimosMenoresAlMinimo24)
 console.log(entreRango24)
-console.log(tendencia24Hs)
+console.log(tendencia24Hs) */
 
 //------------------------------------------------tendencia 5 horas velas 1/2 hora----------------------
     for (let i = 1500- 300; i < 1500; i+=10) {
@@ -141,12 +159,12 @@ console.log(tendencia24Hs)
     else{
         tendencia5Hs="LATERAL"
     }
-console.log("------5 horas-----------")
+/* console.log("------5 horas-----------")
 console.log(valoresCalculo5hs)
 console.log(maximosMayoresAlMAximo5)
 console.log(minimosMenoresAlMinimo5)
 console.log(entreRango5)
-console.log(tendencia5Hs)
+console.log(tendencia5Hs) */
 
 //-----------------tendencia 2horas periodo 5m --------------
 
@@ -192,12 +210,12 @@ for (let i = 1500- 150; i < 1500; i+=5) {
     else{
         tendencia2Hs="LATERAL"
     }
-console.log("------2 horas-----------")
+/* console.log("------2 horas-----------")
 console.log(valoresCalculo2hs)
 console.log(maximosMayoresAlMAximo2)
 console.log(minimosMenoresAlMinimo2)
 console.log(entreRango2)
-console.log(tendencia2Hs)
+console.log(tendencia2Hs) */
 
 //-----------------tendencia 1horas periodo 1m --------------
 
@@ -243,14 +261,14 @@ for (let i = 1500- 60; i < 1500; i++) {
     else{
         tendencia1H="LATERAL"
     }
-console.log("------1 horas-----------")
+/* console.log("------1 horas-----------")
 console.log(valoresCalculo1hs)
 console.log(maximosMayoresAlMAximo1)
 console.log(minimosMenoresAlMinimo1)
 console.log(entreRango1)
 console.log(minimo1);
 console.log(maximo1)
-console.log(tendencia1H)
+console.log(tendencia1H) */
 
 //-----------------------RSI----
 
@@ -265,7 +283,127 @@ console.log(RSI);
 
 }
 
-calcularTendencias()
-console.log("RSI: "+RSI)
+//-------------------------fin inicializacion--------------
+
+
+let contadorVelasMediaHora=0;
+let contadorVelas5Minutos=0;
+
+async function operar(){
+ await calcularTendencias();
+ console.log("RSI: "+RSI)
+ mediaPonderada2H= instrumentos.mediaMovilPonderada(valoresCalculo2hs);
+ mediaPonderada5H= instrumentos.mediaMovilPonderada(valoresCalculo5hs);
+ mediaPonderada24H= instrumentos.mediaMovilPonderada(valoresCalculo24hs);
+
+
+ wsCandles.onmessage= (event) => {  //web socket tiene conexion constante y me envia la infoen el tiemp estipulado
+    //console. clear();
+    let datos = JSON.parse(event.data)
+   if(datos.k.x==true){
+    datosParaRSI.push(datos.k.c);
+    datosParaRSI.shift()
+    RSI = instrumentos.calculadoraRSI(datosParaRSI);
+    valoresCalculo1hs.push(datos.k.c);
+    valoresCalculo1hs.shift();
+    mediaPonderada1H= instrumentos.mediaMovilPonderada(valoresCalculo1hs);
+    funciones.actualizarTendencias(valoresCalculo1hs,tendencia1H,maximo1,minimo1,maximosMayoresAlMAximo1,minimosMenoresAlMinimo1,entreRango1);
+    contadorVelasMediaHora++;
+    contadorVelas5Minutos++;
+    if(contadorVelasMediaHora==30){
+        valoresCalculo24hs.push(datos.k.c)
+        valoresCalculo24hs.shift();
+        contadorVelasMediaHora=0;
+        mediaPonderada24H= instrumentos.mediaMovilPonderada(valoresCalculo24hs);
+        funciones.actualizarTendencias(valoresCalculo24hs,tendencia24Hs,maximo24,minimo24,maximosMayoresAlMAximo24,minimosMenoresAlMinimo24,entreRango24)
+        valoresCalculo5hs.push(datos.k.c);
+        valoresCalculo5hs.shift();
+        mediaPonderada5H= instrumentos.mediaMovilPonderada(valoresCalculo5hs);
+        funciones.actualizarTendencias(valoresCalculo5hs,tendencia5Hs,maximo5,minimo5,maximosMayoresAlMAximo5,minimosMenoresAlMinimo5,entreRango5)
+    }
+    if(contadorVelas5Minutos==5){
+        valoresCalculo2hs.push(datos.k.c);
+        valoresCalculo2hs.shift();
+        contadorVelas5Minutos=0;
+        mediaPonderada2H= instrumentos.mediaMovilPonderada(valoresCalculo2hs);
+        funciones.actualizarTendencias(valoresCalculo2hs,tendencia2Hs,maximo2,minimo2,maximosMayoresAlMAximo2,minimosMenoresAlMinimo2,entreRango2)
+    }
+    }
+        
+}
+ 
+ws.onmessage= (event) => {  //web socket tiene conexion constante y me envia la infoen el tiemp estipulado
+    //console. clear();
+    mediaPonderada1M =  instrumentos.mediaMovilPonderada(valoresCalculoM);
+    const datos = JSON.parse(event.data);
+    precio = parseFloat(datos.p);
+    valoresCalculoM.push(precio);
+    if(valoresCalculoM.length>60){
+        valoresCalculoM.shift();
+    }
+    
+    if(valoresCalculoM.length<60){
+        console.clear()
+        contadorInicial--;
+        console.log(`------- Inicializando datos ${contadorInicial}`)
+    }
+    else{
+        
+        minimosMenoresAlMinimoM=0;
+        maximosMayoresAlMAximoM=0;
+        for (let i = 0; i <  valoresCalculoM.length; i++) {
+        if(valoresCalculoM[i]>maximoM){
+            maximoM= valoresCalculoM[i];
+            maximosMayoresAlMAximoM++
+        }
+        else if(valoresCalculoM[i]<minimoM){
+            minimoM= valoresCalculoM[i]
+            minimosMenoresAlMinimoM++
+        }
+        else{
+            entreRangoM++;
+        }
+
+        
+    }
+    if(maximosMayoresAlMAximoM>minimosMenoresAlMinimoM && maximosMayoresAlMAximoM >= entreRangoM*0.5){
+        tendenciaM= "ALCISTA";
+    }
+    else if(maximosMayoresAlMAximoM>minimosMenoresAlMinimoM && !(maximosMayoresAlMAximoM >= entreRangoM*0.5) && valoresCalculoM[0] < valoresCalculoM[valoresCalculoM.length-1]-15){
+        tendenciaM= "LATERAL-ALCISTA";
+    }
+    else if(minimosMenoresAlMinimoM>maximosMayoresAlMAximoM && minimosMenoresAlMinimoM >= entreRangoM*0.5){
+
+        tendenciaM="BAJISTA"
+    }
+    else if(minimosMenoresAlMinimoM>maximosMayoresAlMAximoM && !(minimosMenoresAlMinimoM >= entreRangoM*0.5) && valoresCalculoM[0] > valoresCalculoM[valoresCalculoM.length-1]+15){
+
+        tendenciaM="LATERAL-BAJISTA"
+    }
+    else{
+        tendenciaM="LATERAL"
+    }
+
+    console.clear();
+    
+    console.log(`---------------------------------------------${precio}-------------------------------------------`)
+    console.log(`24HS ----  Pmax: ${maximo24} ----Pmin: ${minimo24} ---- TENDENCIA: ${tendencia24Hs}-----MPond: ${mediaPonderada24H}`)
+    console.log(`5HS ----  Pmax: ${maximo5} ----Pmin: ${minimo5} ---- TENDENCIA: ${tendencia5Hs}-----MPond: ${mediaPonderada5H}`)
+    console.log(`2HS ----  Pmax: ${maximo2} ----Pmin: ${minimo2} ---- TENDENCIA: ${tendencia2Hs}-----MPond: ${mediaPonderada2H}`)
+    console.log(`1HS ----  Pmax: ${maximo1} ----Pmin: ${minimo1} ---- TENDENCIA: ${tendencia1H} -----MPond: ${mediaPonderada1H}`)
+    console.log(`1M ----  Pmax: ${maximoM} ----Pmin: ${minimoM} ---- TENDENCIA: ${tendenciaM} -----MPond: ${mediaPonderada1M}`)
+
+
+
+
+    }
+}
+
+ //-------------------------empiezan las operacion
+
+}
+operar()
+
+
 
 
