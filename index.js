@@ -60,6 +60,8 @@ let mediaPonderada1M;
 //------datos rsi---
 let datosParaRSI= [];
 var RSI;
+let posicionAbierta=false;
+let datosDePosicion;
 
 
 
@@ -392,6 +394,7 @@ ws.onmessage= (event) => {  //web socket tiene conexion constante y me envia la 
     console.log(`2HS ----  Pmax: ${maximo2} ----Pmin: ${minimo2} ---- TENDENCIA: ${tendencia2Hs}-----MPond: ${mediaPonderada2H}`)
     console.log(`1HS ----  Pmax: ${maximo1} ----Pmin: ${minimo1} ---- TENDENCIA: ${tendencia1H} -----MPond: ${mediaPonderada1H}`)
     console.log(`1M ----  Pmax: ${maximoM} ----Pmin: ${minimoM} ---- TENDENCIA: ${tendenciaM} -----MPond: ${mediaPonderada1M}`)
+    console.log(datosDePosicion);
 
 
 
@@ -399,7 +402,30 @@ ws.onmessage= (event) => {  //web socket tiene conexion constante y me envia la 
     }
 }
 
- //-------------------------empiezan las operacion
+ //-------------------------empiezan las operacion----------------
+
+ if(posicionAbierta==false && (tendencia24Hs=="ALCISTA"|| tendencia24Hs=="LATERAL-ALCISTA") && (tendencia5Hs=="ALCISTA"|| tendencia5Hs=="LATERAL-ALCISTA")
+ && (tendencia2Hs=="ALCISTA"|| tendencia2Hs=="LATERAL-ALCISTA") && (tendencia1H=="ALCISTA"|| tendencia1H=="LATERAL-ALCISTA")
+ &&(tendenciaM=="ALCISTA"|| tendenciaM=="LATERAL-ALCISTA")){
+        let difMaxMEdia = maximo1- minimo1;
+        if(precio <= (maximo1-difMaxMEdia*0.03/100)){
+            console.log("abrir posicion")
+            posicionAbierta=true;
+            api.abrirPosicion("BTCUSDT", "0.001","BUY")
+                .then(data => {
+                    datosDePosicion=data;
+                    console.log(data)
+                    
+                })
+                .catch(err => {
+                    console.log(err)
+                    posicionAbierta=false;
+                    datosDePosicion=undefined;
+                })
+            
+
+        }
+ }
 
 }
 operar()
