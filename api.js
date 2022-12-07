@@ -48,6 +48,27 @@ async function recuperarHistoricoVelas(symbol, interval, limit){
 
 
 
+async function consultarPosicion(symbol){
+    const data = {symbol}
+
+    const timestamp = Date.now();
+
+
+    const signature = crypto.createHmac('sha256', apiSecret)
+                            .update(`${new URLSearchParams({...data, timestamp}).toString()}`)
+                            .digest('hex');
+
+    const newData= {...data, timestamp, signature};
+    const queryString = `?${new URLSearchParams(newData).toString()}`;
+    const resultado = await axios({
+        method: 'GET',
+        url: `${apiUrl}v2/positionRisk${queryString}`,
+        headers: { 'X-MBX-APIKEY': apiKey}
+    });
+
+    return resultado.data;
+
+}
 
 
 
@@ -55,5 +76,5 @@ async function recuperarHistoricoVelas(symbol, interval, limit){
 module.exports ={
     abrirPosicion,
     recuperarHistoricoVelas,
-  
+    consultarPosicion,
 }

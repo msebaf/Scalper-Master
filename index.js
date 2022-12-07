@@ -61,7 +61,10 @@ let mediaPonderada1M;
 let datosParaRSI= [];
 var RSI;
 let posicionAbierta=false;
-let datosDePosicion;
+let precioDeEntrada=0.0;
+let unrealizedProfit=0;
+let tipoDeMercado2H1H1M;
+
 
 
 
@@ -95,10 +98,10 @@ async function calcularTendencias(){
         
     }
     if(maximosMayoresAlMAximo24>minimosMenoresAlMinimo24 && maximosMayoresAlMAximo24 >= entreRango24*0.5){
-        tendencia24Hs= "ALCISTA";
+        tendencia24Hs= "BAJISTA";
     }
     else if(maximosMayoresAlMAximo24>minimosMenoresAlMinimo24 && !(maximosMayoresAlMAximo24 >= entreRango24*0.5)){
-        tendencia24Hs= "LATERAL-ALCISTA";
+        tendencia24Hs= "LATERAL-BAJISTA";
     }
     else if(minimosMenoresAlMinimo24>maximosMayoresAlMAximo24 && minimosMenoresAlMinimo24 >= entreRango24*0.5){
 
@@ -145,10 +148,10 @@ console.log(tendencia24Hs) */
         
     }
     if(maximosMayoresAlMAximo5>minimosMenoresAlMinimo5 && maximosMayoresAlMAximo5 >= entreRango5*0.5){
-        tendencia5Hs= "ALCISTA";
+        tendencia5Hs= "BAJISTA";
     }
     else if(maximosMayoresAlMAximo5>minimosMenoresAlMinimo5 && !(maximosMayoresAlMAximo5 >= entreRango5*0.5)){
-        tendencia5Hs= "LATERAL-ALCISTA";
+        tendencia5Hs= "LATERAL-BAJISTA";
     }
     else if(minimosMenoresAlMinimo5>maximosMayoresAlMAximo5 && minimosMenoresAlMinimo5 >= entreRango5*0.5){
 
@@ -196,10 +199,10 @@ for (let i = 1500- 150; i < 1500; i+=5) {
         
     }
     if(maximosMayoresAlMAximo2>minimosMenoresAlMinimo2 && maximosMayoresAlMAximo2 >= entreRango2*0.5){
-        tendencia2Hs= "ALCISTA";
+        tendencia2Hs= "BAJISTA";
     }
     else if(maximosMayoresAlMAximo2>minimosMenoresAlMinimo2 && !(maximosMayoresAlMAximo2 >= entreRango2*0.5) && valoresCalculo2hs[0] < valoresCalculo2hs[valoresCalculo2hs.length-1]-15){
-        tendencia2Hs= "LATERAL-ALCISTA";
+        tendencia2Hs= "LATERAL-BAJISTA";
     }
     else if(minimosMenoresAlMinimo2>maximosMayoresAlMAximo2 && minimosMenoresAlMinimo2 >= entreRango2*0.5){
 
@@ -247,10 +250,10 @@ for (let i = 1500- 60; i < 1500; i++) {
         
     }
     if(maximosMayoresAlMAximo1>minimosMenoresAlMinimo1 && maximosMayoresAlMAximo1 >= entreRango1*0.5){
-        tendencia1H= "ALCISTA";
+        tendencia1H= "BAJISTA";
     }
     else if(maximosMayoresAlMAximo1>minimosMenoresAlMinimo1 && !(maximosMayoresAlMAximo1 >= entreRango1*0.5) && valoresCalculo1hs[0] < valoresCalculo1hs[valoresCalculo1hs.length-1]-15){
-        tendencia1H= "LATERAL-ALCISTA";
+        tendencia1H= "LATERAL-BAJISTA";
     }
     else if(minimosMenoresAlMinimo1>maximosMayoresAlMAximo1 && minimosMenoresAlMinimo1 >= entreRango1*0.5){
 
@@ -369,10 +372,10 @@ ws.onmessage= (event) => {  //web socket tiene conexion constante y me envia la 
         
     }
     if(maximosMayoresAlMAximoM>minimosMenoresAlMinimoM && maximosMayoresAlMAximoM >= entreRangoM*0.5){
-        tendenciaM= "ALCISTA";
+        tendenciaM= "BAJISTA";
     }
     else if(maximosMayoresAlMAximoM>minimosMenoresAlMinimoM && !(maximosMayoresAlMAximoM >= entreRangoM*0.5) && valoresCalculoM[0] < valoresCalculoM[valoresCalculoM.length-1]-15){
-        tendenciaM= "LATERAL-ALCISTA";
+        tendenciaM= "LATERAL-BAJISTA";
     }
     else if(minimosMenoresAlMinimoM>maximosMayoresAlMAximoM && minimosMenoresAlMinimoM >= entreRangoM*0.5){
 
@@ -386,6 +389,22 @@ ws.onmessage= (event) => {  //web socket tiene conexion constante y me envia la 
         tendenciaM="LATERAL"
     }
 
+    //recuperar datos posicion
+if(posicionAbierta==true){
+    api.consultarPosicion("btcusdt")
+.then(data => {
+    precioDeEntrada=data[0].entryPrice;
+    unrealizedProfit =data[0].unRealizedProfit;
+    
+    
+})
+.catch(err => {
+    console.log(err)
+    posicionAbierta=false;
+    precioDeEntrada=undefined;
+})}
+
+
     console.clear();
     
     console.log(`---------------------------------------------${precio}-------------------------------------------`)
@@ -394,7 +413,9 @@ ws.onmessage= (event) => {  //web socket tiene conexion constante y me envia la 
     console.log(`2HS ----  Pmax: ${maximo2} ----Pmin: ${minimo2} ---- TENDENCIA: ${tendencia2Hs}-----MPond: ${mediaPonderada2H}`)
     console.log(`1HS ----  Pmax: ${maximo1} ----Pmin: ${minimo1} ---- TENDENCIA: ${tendencia1H} -----MPond: ${mediaPonderada1H}`)
     console.log(`1M ----  Pmax: ${maximoM} ----Pmin: ${minimoM} ---- TENDENCIA: ${tendenciaM} -----MPond: ${mediaPonderada1M}`)
-    console.log(datosDePosicion);
+    console.log(`RSI: ${RSI}`)
+    console.log(`Entrada: ${precioDeEntrada}`);
+    console.log(`Profit: ${unrealizedProfit}`);
 
 
 
@@ -402,30 +423,79 @@ ws.onmessage= (event) => {  //web socket tiene conexion constante y me envia la 
     }
 }
 
+/* Combinaciones de tendencias de mercado para 2h, 1h y 1M
+    1           2           3           4   
+     2h up       2h down     2h down     2h down
+     1h up       1h up       1h down     1h up
+     1M up       1M up       1M up       1M down
+
+    5           6           7           8
+     2h up       2h up       2h up       2h down
+     1h down     1h down     1h up       1h down
+     1M up       1M down     1M down     1M down
+
+
+*/
+if((tendencia2Hs=="ALCISTA"|| tendencia2Hs=="LATERAL-ALCISTA") && (tendencia1H=="ALCISTA"|| tendencia1H=="LATERAL-ALCISTA")
+&&(tendenciaM=="ALCISTA"|| tendenciaM=="LATERAL-ALCISTA")){
+    tipoDeMercado2H1H1M = 1;
+}
+else if((tendencia2Hs=="BAJISTA"|| tendencia2Hs=="LATERAL-BAJISTA") && (tendencia1H=="ALCISTA"|| tendencia1H=="LATERAL-ALCISTA")
+&&(tendenciaM=="ALCISTA"|| tendenciaM=="LATERAL-ALCISTA")){
+    tipoDeMercado2H1H1M = 2;
+}
+else if((tendencia2Hs=="BAJISTA"|| tendencia2Hs=="LATERAL-BAJISTA") && (tendencia1H=="BAJISTA"|| tendencia1H=="LATERAL-BAJISTA")
+&&(tendenciaM=="ALCISTA"|| tendenciaM=="LATERAL-ALCISTA")){
+    tipoDeMercado2H1H1M = 3;
+}
+else if((tendencia2Hs=="BAJISTA"|| tendencia2Hs=="LATERAL-BAJISTA") && (tendencia1H=="ALCISTA"|| tendencia1H=="LATERAL-ALCISTA")
+&&(tendenciaM=="BAJISTA"|| tendenciaM=="LATERAL-BAJISTA")){
+    tipoDeMercado2H1H1M = 4;
+}
+
+else if((tendencia2Hs=="ALCISTA"|| tendencia2Hs=="LATERAL-ALCISTA") && (tendencia1H=="BAJISTA"|| tendencia1H=="LATERAL-BAJISTA")
+&&(tendenciaM=="ALCISTA"|| tendenciaM=="LATERAL-ALCISTA")){
+    tipoDeMercado2H1H1M = 5;
+}
+else if((tendencia2Hs=="ALCISTA"|| tendencia2Hs=="LATERAL-ALCISTA") && (tendencia1H=="BAJISTA"|| tendencia1H=="LATERAL-BAJISTA")
+&&(tendenciaM=="BAJISTA"|| tendenciaM=="LATERAL-BAJISTA")){
+    tipoDeMercado2H1H1M = 6;
+}
+else if((tendencia2Hs=="ALCISTA"|| tendencia2Hs=="LATERAL-ALCISTA") && (tendencia1H=="ALCISTA"|| tendencia1H=="LATERAL-ALCISTA")
+&&(tendenciaM=="BAJISTA"|| tendenciaM=="LATERAL-BAJISTA")){
+    tipoDeMercado2H1H1M = 7;
+}
+else if((tendencia2Hs=="BAJISTA"|| tendencia2Hs=="LATERAL-BAJISTA") && (tendencia1H=="BAJISTA"|| tendencia1H=="LATERAL-BAJISTA")
+&&(tendenciaM=="BAJISTA"|| tendenciaM=="LATERAL-BAJISTA")){
+    tipoDeMercado2H1H1M = 8;
+}
+
+
  //-------------------------empiezan las operacion----------------
 
- if(posicionAbierta==false && (tendencia24Hs=="ALCISTA"|| tendencia24Hs=="LATERAL-ALCISTA") && (tendencia5Hs=="ALCISTA"|| tendencia5Hs=="LATERAL-ALCISTA")
- && (tendencia2Hs=="ALCISTA"|| tendencia2Hs=="LATERAL-ALCISTA") && (tendencia1H=="ALCISTA"|| tendencia1H=="LATERAL-ALCISTA")
- &&(tendenciaM=="ALCISTA"|| tendenciaM=="LATERAL-ALCISTA")){
-        let difMaxMEdia = maximo1- minimo1;
-        if(precio <= (maximo1-difMaxMEdia*0.03/100)){
+ //----estrategia todo ALCISTA
+ if(tipoDeMercado2H1H1M==1){
+        let difMinMedia = maximo1- minimo1;
+        if(precio <= (maximo1-difMinMedia*0.03)){
             console.log("abrir posicion")
             posicionAbierta=true;
             api.abrirPosicion("BTCUSDT", "0.001","BUY")
                 .then(data => {
-                    datosDePosicion=data;
+                    precioDeEntrada=data;
                     console.log(data)
                     
                 })
                 .catch(err => {
                     console.log(err)
                     posicionAbierta=false;
-                    datosDePosicion=undefined;
+                    precioDeEntrada=undefined;
                 })
             
 
         }
  }
+
+
 
 }
 operar()
