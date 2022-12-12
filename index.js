@@ -1,4 +1,5 @@
 require('dotenv').config();
+const fs = require("fs");
 const WebSocket = require("ws");
 const ws = new WebSocket(`${process.env.STREAM_URL}btcusdt@markPrice@1s`) //par que queiro monitorear, que quiero(market price), lapso
 const wsCandles = new WebSocket(`${process.env.STREAM_URL}btcusdt@kline_1m`) //stream candles
@@ -57,12 +58,15 @@ let maximosMayoresAlMAximoM=0;
 let minimosMenoresAlMinimoM=0;
 let entreRangoM=0;
 let mediaPonderada1M;
-//------datos rsi---
-let datosParaRSI= [];
-var RSI;
+//------datos RSI---
+let datosParaRSIhora= [];
+var RSIhora;
+let datosParaRSIminuto= [];
+var RSIminuto;
 let posicionAbierta=false;
 let precioDeEntrada=0.0;
 let unrealizedProfit=0;
+let tipoDePosicion ="Ninguna"
 let tipoDeMercado2H1H1M;
 
 
@@ -128,9 +132,9 @@ console.log(tendencia24Hs) */
             
     }
     maximo5= valoresCalculo5hs[0];
-    console.log(maximo5);
+    //console.log(maximo5);
     minimo5 = valoresCalculo5hs[0];
-    console.log(minimo5);
+    //console.log(minimo5);
 
     for (let i = 0; i <  valoresCalculo5hs.length; i++) {
         if(valoresCalculo5hs[i]>maximo5){
@@ -179,9 +183,9 @@ for (let i = 1500- 150; i < 1500; i+=5) {
             
     }
     maximo2= valoresCalculo2hs[0];
-    console.log(maximo2);
+    //console.log(maximo2);
     minimo2 = valoresCalculo2hs[0];
-    console.log(minimo2);
+    //console.log(minimo2);
 
     for (let i = 0; i <  valoresCalculo2hs.length; i++) {
         if(valoresCalculo2hs[i]>maximo2){
@@ -230,9 +234,9 @@ for (let i = 1500- 60; i < 1500; i++) {
             
     }
     maximo1= valoresCalculo1hs[0];
-    console.log(maximo1);
+    //console.log(maximo1);
     minimo1 = valoresCalculo1hs[0];
-    console.log(minimo1);
+    //console.log(minimo1);
 
     for (let i = 0; i <  valoresCalculo1hs.length; i++) {
         if(valoresCalculo1hs[i]>maximo1){
@@ -278,10 +282,10 @@ console.log(tendencia1H) */
 //-----------------------RSI----
 
 for (let i = 1500-15; i < 1500; i++) {
-   datosParaRSI.push(parseFloat( await candels[i][4]));
+   datosParaRSIhora.push(parseFloat( await candels[i][4]));
 }
-RSI= instrumentos.calculadoraRSI(datosParaRSI);
-console.log(RSI);
+RSIhora= instrumentos.calculadoraRSI(datosParaRSIhora);
+//console.log(RSI);
 // continuar con el stream actualizacion de datos criterio de compra y venta
 
     
@@ -296,7 +300,7 @@ let contadorVelas5Minutos=0;
 
 async function operar(){
  await calcularTendencias();
- console.log("RSI: "+RSI)
+ 
  mediaPonderada2H= instrumentos.mediaMovilPonderada(valoresCalculo2hs);
  mediaPonderada5H= instrumentos.mediaMovilPonderada(valoresCalculo5hs);
  mediaPonderada24H= instrumentos.mediaMovilPonderada(valoresCalculo24hs);
@@ -306,9 +310,9 @@ async function operar(){
     //console. clear();
     let datos = JSON.parse(event.data)
    if(datos.k.x==true){
-    datosParaRSI.push(datos.k.c);
-    datosParaRSI.shift()
-    RSI = instrumentos.calculadoraRSI(datosParaRSI);
+    datosParaRSIhora.push(datos.k.c);
+    datosParaRSIhora.shift()
+     RSIhora = instrumentos.calculadoraRSI(datosParaRSIhora);
     valoresCalculo1hs.push(datos.k.c);
     valoresCalculo1hs.shift();
     mediaPonderada1H= instrumentos.mediaMovilPonderada(valoresCalculo1hs);
@@ -343,6 +347,11 @@ ws.onmessage= (event) => {  //web socket tiene conexion constante y me envia la 
     const datos = JSON.parse(event.data);
     precio = parseFloat(datos.p);
     valoresCalculoM.push(precio);
+    datosParaRSIminuto.push(precio);
+    if(datosParaRSIminuto.length>60){
+        datosParaRSIminuto.shift()
+    }
+    RSIminuto = instrumentos.calculadoraRSI(datosParaRSIminuto);
     if(valoresCalculoM.length>60){
         valoresCalculoM.shift();
     }
@@ -413,15 +422,18 @@ if(posicionAbierta==true){
     console.log(`2HS ----  Pmax: ${maximo2} ----Pmin: ${minimo2} ---- TENDENCIA: ${tendencia2Hs}-----MPond: ${mediaPonderada2H}`)
     console.log(`1HS ----  Pmax: ${maximo1} ----Pmin: ${minimo1} ---- TENDENCIA: ${tendencia1H} -----MPond: ${mediaPonderada1H}`)
     console.log(`1M ----  Pmax: ${maximoM} ----Pmin: ${minimoM} ---- TENDENCIA: ${tendenciaM} -----MPond: ${mediaPonderada1M}`)
-    console.log(`RSI: ${RSI}`)
+    console.log(`RSI Hora: ${RSIhora}`)
+    console.log(`RSI minuto: ${RSIminuto}`)
     console.log(`Entrada: ${precioDeEntrada}`);
     console.log(`Profit: ${unrealizedProfit}`);
+    console.log(`Tipo de Posicion ${tipoDePosicion}`)
+    console.log(posicionAbierta)
 
 
 
 
     }
-}
+
 
 /* Combinaciones de tendencias de mercado para 2h, 1h y 1M
     1           2           3           4   
@@ -434,51 +446,292 @@ if(posicionAbierta==true){
      1h down     1h down     1h up       1h down
      1M up       1M down     1M down     1M down
 
+     9
+      2h lat
+      1h lat
+      1M lat
+
 
 */
 if((tendencia2Hs=="ALCISTA"|| tendencia2Hs=="LATERAL-ALCISTA") && (tendencia1H=="ALCISTA"|| tendencia1H=="LATERAL-ALCISTA")
-&&(tendenciaM=="ALCISTA"|| tendenciaM=="LATERAL-ALCISTA")){
+&&(tendenciaM=="ALCISTA"|| tendenciaM=="LATERAL-ALCISTA" || tendenciaM=="LATERAL")){
     tipoDeMercado2H1H1M = 1;
 }
 else if((tendencia2Hs=="BAJISTA"|| tendencia2Hs=="LATERAL-BAJISTA") && (tendencia1H=="ALCISTA"|| tendencia1H=="LATERAL-ALCISTA")
-&&(tendenciaM=="ALCISTA"|| tendenciaM=="LATERAL-ALCISTA")){
+&&(tendenciaM=="ALCISTA"|| tendenciaM=="LATERAL-ALCISTA" || tendenciaM=="LATERAL")){
     tipoDeMercado2H1H1M = 2;
 }
 else if((tendencia2Hs=="BAJISTA"|| tendencia2Hs=="LATERAL-BAJISTA") && (tendencia1H=="BAJISTA"|| tendencia1H=="LATERAL-BAJISTA")
-&&(tendenciaM=="ALCISTA"|| tendenciaM=="LATERAL-ALCISTA")){
+&&(tendenciaM=="ALCISTA"|| tendenciaM=="LATERAL-ALCISTA" || tendenciaM=="LATERAL")){
     tipoDeMercado2H1H1M = 3;
 }
 else if((tendencia2Hs=="BAJISTA"|| tendencia2Hs=="LATERAL-BAJISTA") && (tendencia1H=="ALCISTA"|| tendencia1H=="LATERAL-ALCISTA")
-&&(tendenciaM=="BAJISTA"|| tendenciaM=="LATERAL-BAJISTA")){
+&&(tendenciaM=="BAJISTA"|| tendenciaM=="LATERAL-BAJISTA" || tendenciaM=="LATERAL")){
     tipoDeMercado2H1H1M = 4;
 }
 
 else if((tendencia2Hs=="ALCISTA"|| tendencia2Hs=="LATERAL-ALCISTA") && (tendencia1H=="BAJISTA"|| tendencia1H=="LATERAL-BAJISTA")
-&&(tendenciaM=="ALCISTA"|| tendenciaM=="LATERAL-ALCISTA")){
+&&(tendenciaM=="ALCISTA"|| tendenciaM=="LATERAL-ALCISTA" || tendenciaM=="LATERAL")){
     tipoDeMercado2H1H1M = 5;
 }
 else if((tendencia2Hs=="ALCISTA"|| tendencia2Hs=="LATERAL-ALCISTA") && (tendencia1H=="BAJISTA"|| tendencia1H=="LATERAL-BAJISTA")
-&&(tendenciaM=="BAJISTA"|| tendenciaM=="LATERAL-BAJISTA")){
+&&(tendenciaM=="BAJISTA"|| tendenciaM=="LATERAL-BAJISTA" || tendenciaM=="LATERAL")){
     tipoDeMercado2H1H1M = 6;
 }
 else if((tendencia2Hs=="ALCISTA"|| tendencia2Hs=="LATERAL-ALCISTA") && (tendencia1H=="ALCISTA"|| tendencia1H=="LATERAL-ALCISTA")
-&&(tendenciaM=="BAJISTA"|| tendenciaM=="LATERAL-BAJISTA")){
+&&(tendenciaM=="BAJISTA"|| tendenciaM=="LATERAL-BAJISTA" || tendenciaM=="LATERAL")){
     tipoDeMercado2H1H1M = 7;
 }
 else if((tendencia2Hs=="BAJISTA"|| tendencia2Hs=="LATERAL-BAJISTA") && (tendencia1H=="BAJISTA"|| tendencia1H=="LATERAL-BAJISTA")
-&&(tendenciaM=="BAJISTA"|| tendenciaM=="LATERAL-BAJISTA")){
+&&(tendenciaM=="BAJISTA"|| tendenciaM=="LATERAL-BAJISTA" || tendenciaM=="LATERAL")){
     tipoDeMercado2H1H1M = 8;
+}
+else if((tendencia2Hs=="LATERAL") && (tendencia1H=="LATERAL")
+&&(tendenciaM=="LATERAL")){
+    tipoDeMercado2H1H1M = 9;
 }
 
 
  //-------------------------empiezan las operacion----------------
 
- //----estrategia todo ALCISTA
+if(posicionAbierta==false){
  if(tipoDeMercado2H1H1M==1){
-        let difMinMedia = maximo1- minimo1;
-        if(precio <= (maximo1-difMinMedia*0.03)){
+    let mediaMaxMin = (maximo1+ minimo1)/2;
+    if(precio <= (maximo1-mediaMaxMin*0.000236)){
             console.log("abrir posicion")
             posicionAbierta=true;
+            tipoDePosicion="BUY"
+            unrealizedProfit=0
+            api.abrirPosicion("BTCUSDT", "0.001","BUY")
+                .then(data => {
+                    precioDeEntrada=data;
+                    console.log(data)
+                    
+                })
+                .catch(err => {
+                    console.log(err)
+                    posicionAbierta=false;
+                    precioDeEntrada=undefined;
+                })
+            
+                
+        }
+ }
+ if(tipoDeMercado2H1H1M==2){
+    let mediaMaxMin = (maximo1+ minimo1)/2;
+    if(precio <= (maximo1-mediaMaxMin*0.000236)){
+        console.log("abrir posicion")
+        posicionAbierta=true;
+        tipoDePosicion="BUY"
+        api.abrirPosicion("BTCUSDT", "0.001","BUY")
+            .then(data => {
+                precioDeEntrada=data;
+                console.log(data)
+                
+            })
+            .catch(err => {
+                console.log(err)
+                posicionAbierta=false;
+                precioDeEntrada=undefined;
+            })
+        
+
+    }
+}
+
+if(tipoDeMercado2H1H1M==3){
+    if(RSIhora <= 33){
+        console.log("abrir posicion")
+        posicionAbierta=true;
+        tipoDePosicion="BUY"
+        api.abrirPosicion("BTCUSDT", "0.001","BUY")
+            .then(data => {
+                precioDeEntrada=data;
+                console.log(data)
+                
+            })
+            .catch(err => {
+                console.log(err)
+                posicionAbierta=false;
+                precioDeEntrada=undefined;
+            })
+        }
+    else if(RSIhora>=77){
+        console.log("abrir posicion corta")
+            posicionAbierta=true;
+            tipoDePosicion="SELL"
+            api.abrirPosicion("BTCUSDT", "0.001","SELL")
+                .then(data => {
+                    precioDeEntrada=data;
+                    console.log(data)
+                    
+                })
+                .catch(err => {
+                    console.log(err)
+                    posicionAbierta=false;
+                    precioDeEntrada=undefined;
+                })
+    }
+    }
+
+if(tipoDeMercado2H1H1M==4){
+    if(RSIhora <= 33){
+        console.log("abrir posicion")
+        posicionAbierta=true;
+        tipoDePosicion="BUY"
+        api.abrirPosicion("BTCUSDT", "0.001","BUY")
+            .then(data => {
+                precioDeEntrada=data;
+                console.log(data)
+                
+            })
+            .catch(err => {
+                console.log(err)
+                posicionAbierta=false;
+                precioDeEntrada=undefined;
+            })
+        }
+    else if(RSIhora>=77){
+        console.log("abrir posicion corta")
+            posicionAbierta=true;
+            tipoDePosicion="SELL"
+            api.abrirPosicion("BTCUSDT", "0.001","SELL")
+                .then(data => {
+                    precioDeEntrada=data;
+                    console.log(data)
+                    
+                })
+                .catch(err => {
+                    console.log(err)
+                    posicionAbierta=false;
+                    precioDeEntrada=undefined;
+                })
+    }
+    }
+
+
+if(tipoDeMercado2H1H1M==5){
+    if(RSIhora <= 33){
+        console.log("abrir posicion")
+        posicionAbierta=true;
+        tipoDePosicion="BUY"
+        api.abrirPosicion("BTCUSDT", "0.001","BUY")
+            .then(data => {
+                precioDeEntrada=data;
+                console.log(data)
+                
+            })
+            .catch(err => {
+                console.log(err)
+                posicionAbierta=false;
+                precioDeEntrada=undefined;
+            })
+        }
+    else if(RSIhora>=77){
+        console.log("abrir posicion corta")
+            posicionAbierta=true;
+            tipoDePosicion="SELL"
+            api.abrirPosicion("BTCUSDT", "0.001","SELL")
+                .then(data => {
+                    precioDeEntrada=data;
+                    console.log(data)
+                    
+                })
+                .catch(err => {
+                    console.log(err)
+                    posicionAbierta=false;
+                    precioDeEntrada=undefined;
+                })
+    }
+    
+}
+
+if(tipoDeMercado2H1H1M==6){
+    let mediaMaxMin = (maximo1+ minimo1)/2;
+    if(precio >= (minimo1+mediaMaxMin*0.0003)){
+            console.log("abrir posicion corta")
+            posicionAbierta=true;
+            tipoDePosicion="SELL"
+            api.abrirPosicion("BTCUSDT", "0.001","SELL")
+                .then(data => {
+                    precioDeEntrada=data;
+                    console.log(data)
+                    
+                })
+                .catch(err => {
+                    console.log(err)
+                    posicionAbierta=false;
+                    precioDeEntrada=undefined;
+                })
+            
+
+        }
+}
+
+if(tipoDeMercado2H1H1M==7){
+    if(RSIhora <= 33){
+        console.log("abrir posicion")
+        posicionAbierta=true;
+        tipoDePosicion="BUY"
+        api.abrirPosicion("BTCUSDT", "0.001","BUY")
+            .then(data => {
+                precioDeEntrada=data;
+                console.log(data)
+                
+            })
+            .catch(err => {
+                console.log(err)
+                posicionAbierta=false;
+                precioDeEntrada=undefined;
+            })
+        }
+    else if(RSIhora>=77){
+        console.log("abrir posicion corta")
+            posicionAbierta=true;
+            tipoDePosicion="SELL"
+            api.abrirPosicion("BTCUSDT", "0.001","SELL")
+                .then(data => {
+                    precioDeEntrada=data;
+                    console.log(data)
+                    
+                })
+                .catch(err => {
+                    console.log(err)
+                    posicionAbierta=false;
+                    precioDeEntrada=undefined;
+                })
+    }
+    
+}
+
+if(tipoDeMercado2H1H1M==8){
+    let mediaMaxMin = (maximo1+ minimo1)/2;
+    if(precio >= (minimo1+mediaMaxMin*0.0003)){
+            console.log("abrir posicion corta")
+            posicionAbierta=true;
+            tipoDePosicion="SELL"
+            api.abrirPosicion("BTCUSDT", "0.001","SELL")
+                .then(data => {
+                    precioDeEntrada=data;
+                    console.log(data)
+                    
+                })
+                .catch(err => {
+                    console.log(err)
+                    posicionAbierta=false;
+                    precioDeEntrada=undefined;
+                })
+            
+
+        }
+}
+
+if(tipoDeMercado2H1H1M==9){
+    
+    if(precio < (mediaPonderada1M)){
+            console.log("abrir posicion")
+            posicionAbierta=true;
+            tipoDePosicion="BUY"
             api.abrirPosicion("BTCUSDT", "0.001","BUY")
                 .then(data => {
                     precioDeEntrada=data;
@@ -493,10 +746,80 @@ else if((tendencia2Hs=="BAJISTA"|| tendencia2Hs=="LATERAL-BAJISTA") && (tendenci
             
 
         }
- }
 
+}
+ if(RSIhora<=30 && valoresCalculoM.length==60){
+    console.log("abrir posicion")
+            posicionAbierta=true;
+            tipoDePosicion="BUY"
+            api.abrirPosicion("BTCUSDT", "0.001","BUY")
+                .then(data => {
+                    precioDeEntrada=data;
+                    console.log(data)
+                    
+                })
+                .catch(err => {
+                    console.log(err)
+                    posicionAbierta=false;
+                    precioDeEntrada=undefined;
+                })
+}
+if(RSIhora>=70 && valoresCalculoM.length==60){
+    console.log("abrir posicion corta")
+            posicionAbierta=true;
+            tipoDePosicion="SELL"
+            api.abrirPosicion("BTCUSDT", "0.001","SELL")
+                .then(data => {
+                    precioDeEntrada=data;
+                    console.log(data)
+                    
+                })
+                .catch(err => {
+                    console.log(err)
+                    posicionAbierta=false;
+                    precioDeEntrada=undefined;
+                })
+            
 
+} 
 
+}
+if(posicionAbierta==true){
+    if((unrealizedProfit>0.0069 || unrealizedProfit<=-0.007) && tipoDePosicion=="BUY"){
+        console.log("cerrar posicion")
+            posicionAbierta=false;
+            tipoDePosicion="Ninguna"
+            api.abrirPosicion("BTCUSDT", "0.001","SELL")
+                .then(data => {
+                    precioDeEntrada=data;
+                    console.log(data)
+                    
+                })
+                .catch(err => {
+                    console.log(err)
+                    posicionAbierta=true;
+                    precioDeEntrada=undefined;
+                })
+    }
+    if((unrealizedProfit>0.0069 || unrealizedProfit<=-0.007)  && tipoDePosicion=="SELL"){
+        console.log("cerrar posicion")
+            posicionAbierta=false;
+            tipoDePosicion="Ninguna"
+            api.abrirPosicion("BTCUSDT", "0.001","BUY")
+                .then(data => {
+                    precioDeEntrada=data;
+                    console.log(data)
+                    
+                })
+                .catch(err => {
+                    console.log(err)
+                    posicionAbierta=true;
+                    precioDeEntrada=undefined;
+                })
+    }
+
+}
+}
 }
 operar()
 
