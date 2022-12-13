@@ -19,6 +19,7 @@ let valoresCalculo24hs=[]
 let maximo24;
 let minimo24;
 let maximosMayoresAlMAximo24=0;
+let entreRangoACt24=0
 let minimosMenoresAlMinimo24=0;
 let entreRango24=0;
 let mediaPonderada24H;
@@ -29,6 +30,7 @@ let maximo5;
 let minimo5;
 let maximosMayoresAlMAximo5=0;
 let minimosMenoresAlMinimo5=0;
+let entreRangoACt5=0
 let entreRango5=0;
 let mediaPonderada5H;
 //------------------------variables 2hs
@@ -38,6 +40,7 @@ let maximo2;
 let minimo2;
 let maximosMayoresAlMAximo2=0;
 let minimosMenoresAlMinimo2=0;
+let entreRangoACt2=0
 let entreRango2=0;
 let mediaPonderada2H;
 //---------------------variables 1h
@@ -47,6 +50,7 @@ let maximo1;
 let minimo1;
 let maximosMayoresAlMAximo1=0;
 let minimosMenoresAlMinimo1=0;
+let entreRangoACt1=0
 let entreRango1=0;
 let mediaPonderada1H;
 //---------------------minuto
@@ -56,6 +60,7 @@ let maximoM =0;
 let minimoM=99999999;
 let maximosMayoresAlMAximoM=0;
 let minimosMenoresAlMinimoM=0;
+let entreRangoACtM=0
 let entreRangoM=0;
 let mediaPonderada1M;
 //------datos RSI---
@@ -316,7 +321,7 @@ async function operar(){
     valoresCalculo1hs.push(datos.k.c);
     valoresCalculo1hs.shift();
     mediaPonderada1H= instrumentos.mediaMovilPonderada(valoresCalculo1hs);
-    funciones.actualizarTendencias(valoresCalculo1hs,tendencia1H,maximo1,minimo1,maximosMayoresAlMAximo1,minimosMenoresAlMinimo1,entreRango1);
+    funciones.actualizarTendencias(valoresCalculo1hs,tendencia1H,maximo1,minimo1,maximosMayoresAlMAximo1,minimosMenoresAlMinimo1,entreRango1,entreRangoACt1);
     contadorVelasMediaHora++;
     contadorVelas5Minutos++;
     if(contadorVelasMediaHora==30){
@@ -324,18 +329,18 @@ async function operar(){
         valoresCalculo24hs.shift();
         contadorVelasMediaHora=0;
         mediaPonderada24H= instrumentos.mediaMovilPonderada(valoresCalculo24hs);
-        funciones.actualizarTendencias(valoresCalculo24hs,tendencia24Hs,maximo24,minimo24,maximosMayoresAlMAximo24,minimosMenoresAlMinimo24,entreRango24)
+        funciones.actualizarTendencias(valoresCalculo24hs,tendencia24Hs,maximo24,minimo24,maximosMayoresAlMAximo24,minimosMenoresAlMinimo24,entreRango24,entreRangoACt24)
         valoresCalculo5hs.push(datos.k.c);
         valoresCalculo5hs.shift();
         mediaPonderada5H= instrumentos.mediaMovilPonderada(valoresCalculo5hs);
-        funciones.actualizarTendencias(valoresCalculo5hs,tendencia5Hs,maximo5,minimo5,maximosMayoresAlMAximo5,minimosMenoresAlMinimo5,entreRango5)
+        funciones.actualizarTendencias(valoresCalculo5hs,tendencia5Hs,maximo5,minimo5,maximosMayoresAlMAximo5,minimosMenoresAlMinimo5,entreRango5, entreRangoACt5)
     }
     if(contadorVelas5Minutos==5){
         valoresCalculo2hs.push(datos.k.c);
         valoresCalculo2hs.shift();
         contadorVelas5Minutos=0;
         mediaPonderada2H= instrumentos.mediaMovilPonderada(valoresCalculo2hs);
-        funciones.actualizarTendencias(valoresCalculo2hs,tendencia2Hs,maximo2,minimo2,maximosMayoresAlMAximo2,minimosMenoresAlMinimo2,entreRango2)
+        funciones.actualizarTendencias(valoresCalculo2hs,tendencia2Hs,maximo2,minimo2,maximosMayoresAlMAximo2,minimosMenoresAlMinimo2,entreRango2, entreRangoACt2)
     }
     }
         
@@ -504,7 +509,7 @@ if(posicionAbierta==false){
             unrealizedProfit=0
             api.abrirPosicion("BTCUSDT", "0.001","BUY")
                 .then(data => {
-                    precioDeEntrada=data;
+                    precioDeEntrada=precio;
                     console.log(data)
                     
                 })
@@ -748,7 +753,7 @@ if(tipoDeMercado2H1H1M==9){
         }
 
 }
- if(RSIhora<=30 && valoresCalculoM.length==60){
+ /* if(RSIhora<=30 && valoresCalculoM.length==60){
     console.log("abrir posicion")
             posicionAbierta=true;
             tipoDePosicion="BUY"
@@ -756,6 +761,14 @@ if(tipoDeMercado2H1H1M==9){
                 .then(data => {
                     precioDeEntrada=data;
                     console.log(data)
+                    fs.appendFile("seesion-log.txt", `Apertura \n 24hs: ${tendencia24Hs}; 5hs: ${tendencia5Hs}; 2hs: ${tendencia2Hs}; 1hs: ${tendencia1H}; M: ${tendenciaM}\n Precio: ${precio}; Tipo: BUY \n`, (err) => {
+                        if (err)
+                          console.log(err);
+                        else {
+                          console.log("File written successfully\n");
+                         
+                        }
+                      });
                     
                 })
                 .catch(err => {
@@ -772,7 +785,14 @@ if(RSIhora>=70 && valoresCalculoM.length==60){
                 .then(data => {
                     precioDeEntrada=data;
                     console.log(data)
-                    
+                    fs.appendFile("seesion-log.txt", `Apertura \n 24hs: ${tendencia24Hs}; 5hs: ${tendencia5Hs}; 2hs: ${tendencia2Hs}; 1hs: ${tendencia1H}; M: ${tendenciaM}\n Precio: ${precio}; Tipo: SELL \n`, (err) => {
+                        if (err)
+                          console.log(err);
+                        else {
+                          console.log("File written successfully\n");
+                         
+                        }
+                      });
                 })
                 .catch(err => {
                     console.log(err)
@@ -781,11 +801,11 @@ if(RSIhora>=70 && valoresCalculoM.length==60){
                 })
             
 
-} 
+}  */
 
 }
 if(posicionAbierta==true){
-    if((unrealizedProfit>0.0069 || unrealizedProfit<=-0.007) && tipoDePosicion=="BUY"){
+    if((unrealizedProfit>0.008 || unrealizedProfit<= -0.007) && tipoDePosicion=="BUY"){
         console.log("cerrar posicion")
             posicionAbierta=false;
             tipoDePosicion="Ninguna"
@@ -793,7 +813,14 @@ if(posicionAbierta==true){
                 .then(data => {
                     precioDeEntrada=data;
                     console.log(data)
-                    
+                    fs.appendFile("seesion-log.txt", `Cierre \n 24hs: ${tendencia24Hs}; 5hs: ${tendencia5Hs}; 2hs: ${tendencia2Hs}; 1hs: ${tendencia1H}; M: ${tendenciaM}\n Precio Cierre: ${precio}; Tipo: SELL; profit: ${unrealizedProfit} \n`,(err) => {
+                        if (err)
+                          console.log(err);
+                        else {
+                          console.log("File written successfully\n");
+                        
+                        }
+                      });
                 })
                 .catch(err => {
                     console.log(err)
@@ -801,7 +828,7 @@ if(posicionAbierta==true){
                     precioDeEntrada=undefined;
                 })
     }
-    if((unrealizedProfit>0.0069 || unrealizedProfit<=-0.007)  && tipoDePosicion=="SELL"){
+    if((unrealizedProfit>0.008 || unrealizedProfit<= -0.007)  && tipoDePosicion=="SELL"){
         console.log("cerrar posicion")
             posicionAbierta=false;
             tipoDePosicion="Ninguna"
@@ -809,7 +836,14 @@ if(posicionAbierta==true){
                 .then(data => {
                     precioDeEntrada=data;
                     console.log(data)
-                    
+                    fs.appendFile("seesion-log.txt", `Cierre \n 24hs: ${tendencia24Hs}; 5hs: ${tendencia5Hs}; 2hs: ${tendencia2Hs}; 1hs: ${tendencia1H}; M: ${tendenciaM}\n PrecioCierre: ${precio}; Tipo: BUY; profit: ${unrealizedProfit} \n`,(err) => {
+                        if (err)
+                          console.log(err);
+                        else {
+                          console.log("File written successfully\n");
+                          
+                        }
+                      });
                 })
                 .catch(err => {
                     console.log(err)
