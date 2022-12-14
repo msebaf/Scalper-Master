@@ -33,9 +33,9 @@ function calculadoraRSI(arrayListaDeprecios, datosStream){
     }
     //console.log(sumaCierresNegativos)
     //console.log(sumaCierresPositivos)
-    avgU= sumaCierresPositivos/periodo;
+    avgU= sumaCierresPositivos/cantidadPositivos;
     //console.log("avgU " + avgU)
-    avgD= sumaCierresNegativos/periodo;
+    avgD= sumaCierresNegativos/cantidadNegativos;
     //console.log("avgD " + avgD)
     try{
     relativeStrenght= avgU/avgD;

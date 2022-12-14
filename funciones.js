@@ -1,90 +1,93 @@
-const { mediaMovil } = require("./instrumentos");
 
-async function actualizarTendencias(valoresCalculoPeriodo,tendenciaPeriodo, maximoPeriodo, minimoPerido,maximosMayoresAlMAximo,
-    minimosMenoresAlMinimo, entreRangoPeriodo, entreRangoACt){
-    
+const api = require("./api");
+const instrumentos = require("./instrumentos")
 
-  
-    //maximoPeriodo= valoresCalculoPeriodo[0];
-    //console.log(maximoPeriodo);
-    //minimoPerido = valoresCalculoPeriodo[0];
-   //console.log(minimoPerido);
-   if(maximoPeriodo==0){
-    maximoPeriodo=mediaMovil(await valoresCalculoPeriodo)
-   }
-   if(minimoPerido==99999999){
-    minimoPerido=mediaMovil(await valoresCalculoPeriodo)
-   }
+
+async function recoleccionDeDAtos(candels, dataStorage, cantDAtos){
+       
+    for (let i = 0; i < cantDAtos; i++) {
+      
+        dataStorage.push(parseFloat(candels[i][4]))
+                
+    }
    
-    maximosMayoresAlMAximo=0;
-    minimosMenoresAlMinimo=0;
-    entreRangoPeriodo=0
-    entreRangoMayores=0;
-    entreRangoMenores=0
+
+
+}
+
+//toman una vela extra como punto de cmienzo por eso por ej para calcular 1 hora con velas de 1 minuto tomo 61 velas
+async function actualizarTendencias(valoresCalculoPeriodo,tendenciaPeriodo, maximoPeriodo, minimoPerido,maximosMayoresAlMAximo,
+    minimosMenoresAlMinimo, entreRangoACt){
     
 
 
-    for (let i = 0; i < valoresCalculoPeriodo.length; i++) {
-        if(valoresCalculoPeriodo[i]>maximoPeriodo){
-            maximoPeriodo= valoresCalculoPeriodo[i];
-            maximosMayoresAlMAximo++
+   if(maximoPeriodo[0]==0){
+    maximoPeriodo[0]= valoresCalculoPeriodo[0]
+   }
+   else{
+    maximoPeriodo[0]= 0;
+   }
+   if(minimoPerido[0]==99999999){
+    minimoPerido[0]= valoresCalculoPeriodo[0]
+   }else{
+    minimoPerido[0]=99999999
+   }
+ 
+    entreRangoACt[0]= valoresCalculoPeriodo[0]
+   
+   
+
+    maximosMayoresAlMAximo[0]=0;
+    minimosMenoresAlMinimo[0]=0;
+    let entreRangoMayores=0;
+    let entreRangoMenores=0
+    
+
+
+    for (let i = 1; i < valoresCalculoPeriodo.length; i++) {
+        if(valoresCalculoPeriodo[i]>maximoPeriodo[0]){
+            maximoPeriodo[0]= valoresCalculoPeriodo[i];
+            maximosMayoresAlMAximo[0]++
         }
-        else if(valoresCalculoPeriodo[i]<minimoPerido){
-            minimoPerido= valoresCalculoPeriodo[i]
-            minimosMenoresAlMinimo++
+        else if(valoresCalculoPeriodo[i]<minimoPerido[0]){
+            minimoPerido[0]= valoresCalculoPeriodo[i]
+            minimosMenoresAlMinimo[0]++
         }
-        else if(valoresCalculoPeriodo[i]> entreRangoACt){
+        else if(valoresCalculoPeriodo[i]> entreRangoACt[0]){
             entreRangoMayores++;
+            entreRangoACt[0]=valoresCalculoPeriodo[i]
         }
         else{
             entreRangoMenores++
+            entreRangoACt[0]=valoresCalculoPeriodo[i]
         }
 
         
     }
-   
-    if((maximosMayoresAlMAximo>minimosMenoresAlMinimo) && (entreRangoMayores>entreRangoMenores+10)&&(valoresCalculoPeriodo[0]<valoresCalculoPeriodo[valoresCalculoPeriodo.length-1])){
-        tendenciaPeriodo= "ALCISTA";
+    
+    if((maximosMayoresAlMAximo[0]>minimosMenoresAlMinimo[0]) && (entreRangoMayores>entreRangoMenores+10)&&(valoresCalculoPeriodo[0]<valoresCalculoPeriodo[valoresCalculoPeriodo.length-1])){
+        tendenciaPeriodo[0]= "ALCISTA";
     }
-    else if((maximosMayoresAlMAximo>minimosMenoresAlMinimo) && !(entreRangoMayores >entreRangoMenores)&&(valoresCalculoPeriodo[0]<valoresCalculoPeriodo[valoresCalculoPeriodo.length-1])){
-        tendenciaPeriodo= "LATERAL-ALCISTA";
+    else if((maximosMayoresAlMAximo[0]>minimosMenoresAlMinimo[0]) && (entreRangoMayores >entreRangoMenores)&&(valoresCalculoPeriodo[0]<valoresCalculoPeriodo[valoresCalculoPeriodo.length-1])){
+        tendenciaPeriodo[0]= "LATERAL-ALCISTA";
     }
-    else if((minimosMenoresAlMinimo>maximosMayoresAlMAximo) && (entreRangoMenores > entreRangoMayores+10)&&(valoresCalculoPeriodo[0]>valoresCalculoPeriodo[valoresCalculoPeriodo.length-1])){
+    else if((minimosMenoresAlMinimo[0]>maximosMayoresAlMAximo[0]) && (entreRangoMenores > entreRangoMayores+10)&&(valoresCalculoPeriodo[0]>valoresCalculoPeriodo[valoresCalculoPeriodo.length-1])){
 
-        tendenciaPeriodo="BAJISTA"
+        tendenciaPeriodo[0]="BAJISTA"
     }
-    else if((minimosMenoresAlMinimo>maximosMayoresAlMAximo) && !(entreRangoMenores >entreRangoMayores)&&(valoresCalculoPeriodo[0]>valoresCalculoPeriodo[valoresCalculoPeriodo.length-1])){
+    else if((minimosMenoresAlMinimo[0]>maximosMayoresAlMAximo[0]) && (entreRangoMenores >entreRangoMayores)&&(valoresCalculoPeriodo[0]>valoresCalculoPeriodo[valoresCalculoPeriodo.length-1])){
 
-        tendenciaPeriodo="LATERAL-BAJISTA"
+        tendenciaPeriodo[0]="LATERAL-BAJISTA"
     }
     else{
-        tendenciaPeriodo="LATERAL"
+        tendenciaPeriodo[0]="LATERAL"
     }
 
-    maximoPeriodo= 0;
-    minimoPerido=99999999
-    for (let i = 0; i <  valoresCalculoPeriodo.length; i++) {
-        if(valoresCalculoPeriodo[i]>maximoPeriodo){
-            maximoPeriodo= valoresCalculoPeriodo[i];
-            
-        }
-        else if(valoresCalculoPeriodo[i]<minimoPerido){
-            minimoPerido= valoresCalculoPeriodo[i]
-            
-        }
-        
-
-        
-    }
-/* console.log("---------algo hs---------------------")
-console.log(new Date().toLocaleString())
-console.log(valoresCalculoPeriodo)
-console.log(maximosMayoresAlMAximo)
-console.log(minimosMenoresAlMinimo)
-console.log(entreRangoPeriodo)
-console.log(tendenciaPeriodo) */
+    let actualizado;
+    return actualizado =true
 }
 
 module.exports={
     actualizarTendencias,
+    recoleccionDeDAtos,
 }
