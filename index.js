@@ -21,6 +21,21 @@ let candels30m
 let precio;
 let contadorInicial=60;
 let contadorVelasMinuto = 0;
+let valoresEstocastico=[];
+let estocasticoKV=[];
+let ArrayEstocasticosRapidos=[]
+let estocasticoDV=[];
+let senialEstocastica=["esperando señal"];
+let valoresEstocastico1m=[];
+let estocasticoKV1m=[];
+let ArrayEstocasticosRapidos1m=[]
+let estocasticoDV1m=[];
+let senialEstocastica1m=["esperando señal"];
+let valoresEstocastico3m=[];
+let estocasticoKV3m=[];
+let ArrayEstocasticosRapidos3m=[]
+let estocasticoDV3m=[];
+let senialEstocastica3m=["esperando señal"];
 //-------------------variables 24hs
 let tendencia24Hs=[];
 let valoresCalculo24hs=[]
@@ -92,12 +107,12 @@ let tipoDeMercado2H1H1M;
 
 async function operar(){
 candels1m=  await api.recuperarHistoricoVelas("btcusdt", "1m", 61);
-candels3m= await api.recuperarHistoricoVelas("btcusdt", "3m", 15);
+candels3m= await api.recuperarHistoricoVelas("btcusdt", "3m", 25);
 candels5m= await api.recuperarHistoricoVelas("btcusdt", "5m", 25);
 candels15m= await api.recuperarHistoricoVelas("btcusdt", "15m", 21);
 candels30m= await api.recuperarHistoricoVelas("btcusdt", "30m", 49);
 funciones.recoleccionDeDAtos(candels1m, valoresCalculo1hs,61)
-funciones.recoleccionDeDAtos(candels3m, datosParaRSIhora, 15);
+funciones.recoleccionDeDAtos(candels3m, datosParaRSIhora, 25);
 funciones.recoleccionDeDAtos(candels5m, valoresCalculo2hs, 25)
 funciones.recoleccionDeDAtos(candels15m, valoresCalculo5hs,21)
 funciones.recoleccionDeDAtos(candels30m, valoresCalculo24hs, 49)
@@ -107,11 +122,39 @@ await funciones.actualizarTendencias(valoresCalculo1hs, tendencia1H, maximo1,min
 await funciones.actualizarTendencias(valoresCalculo5hs, tendencia5Hs, maximo5,minimo5,maximosMayoresAlMAximo5, minimosMenoresAlMinimo5,entreRangoACt5);
 await funciones.actualizarTendencias(valoresCalculo2hs, tendencia2Hs, maximo2,minimo2,maximosMayoresAlMAximo2, minimosMenoresAlMinimo2,entreRangoACt2);
 await funciones.actualizarTendencias(valoresCalculo24hs, tendencia24Hs, maximo24,minimo24,maximosMayoresAlMAximo24, minimosMenoresAlMinimo24,entreRangoACt24); 
- RSIhora= instrumentos.calculadoraRSI(datosParaRSIhora);
  
+
+ valoresEstocastico1m = valoresCalculo1hs.slice(36,62);
+ valoresEstocastico3m = [...datosParaRSIhora];
+ let k=0;
+ while(k<5){
+    for (let i = 0; i < 20; i++) {
+        instrumentos.estocasticoK(valoresEstocastico1m, ArrayEstocasticosRapidos1m, estocasticoKV1m)
+    }
+    valoresEstocastico1m.shift();
+    k++
+ }
+ k=0
+ while(k<5){
+    for (let i = 0; i < 20; i++) {
+        instrumentos.estocasticoK(valoresEstocastico3m, ArrayEstocasticosRapidos3m, estocasticoKV3m)
+    }
+    valoresEstocastico3m.shift();
+    k++
+ }
+
+ instrumentos.estocasticoD(ArrayEstocasticosRapidos1m, estocasticoDV1m);
+ instrumentos.estocasticoD(ArrayEstocasticosRapidos3m, estocasticoDV3m);
+ datosParaRSIhora.splice(0, 10)
+
+ RSIhora= instrumentos.calculadoraRSI(datosParaRSIhora);
+
  mediaPonderada2H= instrumentos.mediaMovilPonderada(valoresCalculo2hs);
  mediaPonderada5H= instrumentos.mediaMovilPonderada(valoresCalculo5hs);
  mediaPonderada24H= instrumentos.mediaMovilPonderada(valoresCalculo24hs);
+
+ 
+ 
 
 
  wsCandles1m.onmessage= (event) => {  //web socket tiene conexion constante y me envia la infoen el tiemp estipulado
@@ -133,7 +176,12 @@ await funciones.actualizarTendencias(valoresCalculo24hs, tendencia24Hs, maximo24
     valoresCalculo1hs.shift();
     mediaPonderada1H= instrumentos.mediaMovilPonderada(valoresCalculo1hs);
     funciones.actualizarTendencias(valoresCalculo1hs, tendencia1H, maximo1,minimo1,maximosMayoresAlMAximo1, minimosMenoresAlMinimo1,entreRangoACt1);
-   
+    valoresEstocastico1m.push(datos.k.c);
+        valoresEstocastico1m.shift()
+        
+        instrumentos.estocasticoK(valoresEstocastico1m,ArrayEstocasticosRapidos1m, estocasticoKV1m);
+        instrumentos.estocasticoD(ArrayEstocasticosRapidos1m, estocasticoDV1m);
+        instrumentos.comparadorEstocasticos(estocasticoKV1m, estocasticoDV1m, senialEstocastica1m);
     }
         
 }
@@ -143,6 +191,12 @@ wsCandles3m.onmessage=(event)=>{
     datosParaRSIhora.push(datos.k.c);
     datosParaRSIhora.shift()
      RSIhora = instrumentos.calculadoraRSI(datosParaRSIhora);
+     valoresEstocastico3m.push(datos.k.c);
+        valoresEstocastico3m.shift()
+        
+        instrumentos.estocasticoK(valoresEstocastico3m,ArrayEstocasticosRapidos3m, estocasticoKV3m);
+        instrumentos.estocasticoD(ArrayEstocasticosRapidos3m, estocasticoDV3m);
+        instrumentos.comparadorEstocasticos(estocasticoKV3m, estocasticoDV3m, senialEstocastica3m);
    }
 }
 wsCandles5m.onmessage=(event)=>{
@@ -191,17 +245,29 @@ wsPrice.onmessage= (event) => {  //web socket tiene conexion constante y me envi
     
     if(valoresCalculoM.length<60){
         posicionAbierta= undefined
+        valoresEstocastico.push(precio);
+        if(valoresEstocastico.length>20){
+        valoresEstocastico.shift()}
         
         console.log(`------- Cargando datos ${contadorInicial- valoresCalculoM.length}`)
         
     }
     else if(valoresCalculoM.length == 60){
         posicionAbierta= false;
-        
+        valoresEstocastico.push(precio);
+        if(valoresEstocastico.length>20){
+        valoresEstocastico.shift()}
         console.log(`Iniciando programa`)
     }
     else{
         console.clear();
+        valoresEstocastico.push(precio);
+       
+        valoresEstocastico.shift()
+        console.log(valoresEstocastico.length)
+        instrumentos.estocasticoK(valoresEstocastico,ArrayEstocasticosRapidos, estocasticoKV);
+        instrumentos.estocasticoD(ArrayEstocasticosRapidos, estocasticoDV);
+        instrumentos.comparadorEstocasticos(estocasticoKV, estocasticoDV, senialEstocastica);
 
 
     //recuperar datos posicion
@@ -235,6 +301,18 @@ console.log(`Entrada: ${precioDeEntrada}`);
 console.log(`Profit: ${unrealizedProfit}`);
 console.log(`Tipo de Posicion ${tipoDePosicion}`)
 console.log(posicionAbierta)
+console.log("-----------------------------Estocastico 1 segundo----------------------"+ valoresEstocastico.length + "-" + ArrayEstocasticosRapidos.length)
+console.log("Estocastico K 1s: " + estocasticoKV)
+console.log("estocastico D 1s: " + estocasticoDV)
+console.log("1s : "+ senialEstocastica)
+console.log("-----------------------------Estocastico 1 minuto----------------------"+ valoresEstocastico1m.length + "-" + ArrayEstocasticosRapidos1m.length)
+console.log("Estocastico K 1M: "+ estocasticoKV1m)
+console.log("Estocastico K 1M: "+ estocasticoDV1m)
+console.log("1m : " + senialEstocastica1m)
+console.log("-----------------------------Estocastico 3 minutos----------------------"+ valoresEstocastico3m.length + "-" + ArrayEstocasticosRapidos3m.length)
+console.log("Estocastico K 3M: "+ estocasticoKV3m)
+console.log("Estocastico K 3M: "+ estocasticoDV3m)
+console.log("3m : " + senialEstocastica3m)
 
 
 
@@ -555,7 +633,7 @@ if(tipoDeMercado2H1H1M==9){
         }
 
 } */
-  if(RSIhora<=30 && valoresCalculoM.length==61){
+  /* if(RSIhora<=30 && valoresCalculoM.length==61){
     console.log("abrir posicion")
             posicionAbierta=true;
             tipoDePosicion="BUY"
@@ -652,11 +730,11 @@ if(posicionAbierta==true){
                     posicionAbierta=true;
                     precioDeEntrada=undefined;
                 })
-    }
+    }*/
 }
 
 
-} 
+}  
 
 }
 }
