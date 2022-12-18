@@ -158,53 +158,33 @@ async function comparadorEstocasticos(estoKV, estoDV, senial){
 
 
 
-async function MACD(arrayCorto,canDatosCorto, arrayLargo, cantDatosLargo, datoDeStream){
-        if(datoDeStream){
-       await arrayCorto.push(datoDeStream);
-        if(arrayCorto.length>canDatosCorto){
-        arrayCorto.shift();
-        
-       
-    }
-
-   await arrayLargo.push(datoDeStream);
-    if(arrayLargo.length>cantDatosLargo){
-        arrayLargo.shift();
-        
-    }}
-    let macd = mediaMovilPonderada(arrayCorto)-mediaMovilPonderada(arrayLargo);
-    return macd;
+async function MACD(arrayCorto, arrayLargo, MACDs){
+      
+    let macd =  mediaMovilPonderada(arrayCorto)-mediaMovilPonderada(arrayLargo);
+    MACDs.push(macd);
+    return macd; //linea para forzar el await en el indicador schaff
 }
 
-async function MACDseñal(arrayDeMacds, nuevaMacd){
-    if(nuevaMacd){
-       await arrayDeMacds.push(nuevaMacd);
-    if(arrayDeMacds.length>9){
-        arrayDeMacds.shift();
-        
-    }}
 
-    return mediaMovilPonderada(arrayDeMacds);
 
-}
 
-async function histograma(MACD, señal){
-    let histogr = MACD - señal;
-    return histogr;
-}
 
-async function indicadorTendenciaSchaff(arrayCorto, arrayLargo,arrayMACDs, datosStream){
+async function indicadorTendenciaSchaff(arrayCorto, arrayLargo,MACDs,schaffV){
+    let nada=[];
+    let valorK=[];
+    let valorD=[]
+    estocasticoK(MACDs,nada, valorK);
+    estocasticoD(MACDs, valorD);
+    let macfalso=[];
+    let SCmacd;
+    mmc = mediaMovilPonderada(arrayCorto);
+    mml= mediaMovilPonderada(arrayLargo)
+   
+    SCmacd = await MACD(await mmc, await mml,macfalso)
+    
 
-    let macd = MACD(arrayCorto, 23, arrayLargo, 50, datosStream);
-    arrayMACDs.push(macd);
-    if(arrayMACDs.length>10){
-        arrayMACDs.shift();
-    }
-    let estocasticoRapidoK= estocasticoRapido(arrayMACDs);
-    let estocasticoLentoD=estocasticoLento(arrayMACDs);
-
-    let Schaff = 100 * (macd - estocasticoRapidoK) / (estocasticoLentoD - estocasticoRapidoK);
-    return Schaff;
+    schaffV.push(100 * (SCmacd - valorK[0]) / (valorD[0] - valorK[0]));
+    
 
 }
 
@@ -216,8 +196,6 @@ module.exports={
     estocasticoK,
     estocasticoD,
     MACD,
-    MACDseñal,
-    histograma,
     indicadorTendenciaSchaff,
     comparadorEstocasticos,
 

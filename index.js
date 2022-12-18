@@ -19,6 +19,25 @@ let candels5m;
 let candels15m;
 let candels30m
 let precio;
+//-------------------shaff------------------
+let schaff=[]
+//------------------datos para MACD----------
+let valoresMACDlargo1s=[];
+let valoresMACDcorto1s=[];
+let MACDs1s=[];
+let senial1s;
+let histograma1s=[];
+let valoresMACDlargo1m=[];
+let valoresMACDcorto1m=[];
+let MACDs1m=[];
+let senial1m;
+let histograma1m=[];
+let valoresMACDlargo3m=[];
+let valoresMACDcorto3m=[];
+let MACDs3m=[];
+let senial3m;
+let histograma3m=[];
+//-----------------datos para estocasticos--------
 let contadorInicial=60;
 let contadorVelasMinuto = 0;
 let valoresEstocastico=[];
@@ -107,12 +126,12 @@ let tipoDeMercado2H1H1M;
 
 async function operar(){
 candels1m=  await api.recuperarHistoricoVelas("btcusdt", "1m", 61);
-candels3m= await api.recuperarHistoricoVelas("btcusdt", "3m", 25);
+candels3m= await api.recuperarHistoricoVelas("btcusdt", "3m", 35);
 candels5m= await api.recuperarHistoricoVelas("btcusdt", "5m", 25);
 candels15m= await api.recuperarHistoricoVelas("btcusdt", "15m", 21);
 candels30m= await api.recuperarHistoricoVelas("btcusdt", "30m", 49);
 funciones.recoleccionDeDAtos(candels1m, valoresCalculo1hs,61)
-funciones.recoleccionDeDAtos(candels3m, datosParaRSIhora, 25);
+funciones.recoleccionDeDAtos(candels3m, datosParaRSIhora, 35);
 funciones.recoleccionDeDAtos(candels5m, valoresCalculo2hs, 25)
 funciones.recoleccionDeDAtos(candels15m, valoresCalculo5hs,21)
 funciones.recoleccionDeDAtos(candels30m, valoresCalculo24hs, 49)
@@ -123,25 +142,47 @@ await funciones.actualizarTendencias(valoresCalculo5hs, tendencia5Hs, maximo5,mi
 await funciones.actualizarTendencias(valoresCalculo2hs, tendencia2Hs, maximo2,minimo2,maximosMayoresAlMAximo2, minimosMenoresAlMinimo2,entreRangoACt2);
 await funciones.actualizarTendencias(valoresCalculo24hs, tendencia24Hs, maximo24,minimo24,maximosMayoresAlMAximo24, minimosMenoresAlMinimo24,entreRangoACt24); 
  
+valoresMACDlargo3m = [...datosParaRSIhora]
+valoresMACDcorto3m = datosParaRSIhora.slice(14)
 
- valoresEstocastico1m = valoresCalculo1hs.slice(36,62);
- valoresEstocastico3m = [...datosParaRSIhora];
+ valoresEstocastico1m = valoresCalculo1hs.slice(36);
+
+ valoresEstocastico3m = datosParaRSIhora.slice(10);
+ 
+ 
+ valoresMACDlargo1m = valoresCalculo1hs.slice(26)
+ valoresMACDcorto1m = valoresCalculo1hs.slice(40)
+ valoresMACDlargo3m = valoresCalculo1hs.slice(26)
+ valoresMACDcorto3m = valoresCalculo1hs.slice(40)
+ 
+ 
  let k=0;
  while(k<5){
     for (let i = 0; i < 20; i++) {
         instrumentos.estocasticoK(valoresEstocastico1m, ArrayEstocasticosRapidos1m, estocasticoKV1m)
-    }
-    valoresEstocastico1m.shift();
-    k++
- }
- k=0
- while(k<5){
-    for (let i = 0; i < 20; i++) {
         instrumentos.estocasticoK(valoresEstocastico3m, ArrayEstocasticosRapidos3m, estocasticoKV3m)
     }
+    valoresEstocastico1m.shift();
     valoresEstocastico3m.shift();
     k++
  }
+ k=0;
+ while(k<9){
+    instrumentos.MACD(valoresMACDcorto1m.slice(0,13), valoresMACDlargo1m.slice(0,27), MACDs1m)
+    valoresMACDcorto1m.shift();
+    valoresMACDlargo1m.shift();
+    instrumentos.MACD(valoresMACDcorto3m.slice(0,13), valoresMACDlargo3m.slice(0,27), MACDs3m)
+    valoresMACDcorto3m.shift();
+    valoresMACDlargo3m.shift();
+    k++;
+ }
+
+senial1m = instrumentos.mediaMovilPonderada(MACDs1m)
+senial3m = instrumentos.mediaMovilPonderada(MACDs3m)
+
+histograma1m.push(MACDs1m[MACDs1m.length-1]-senial1m)
+histograma3m.push(MACDs3m[MACDs3m.length-1]-senial3m)
+
 
  instrumentos.estocasticoD(ArrayEstocasticosRapidos1m, estocasticoDV1m);
  instrumentos.estocasticoD(ArrayEstocasticosRapidos3m, estocasticoDV3m);
@@ -153,11 +194,13 @@ await funciones.actualizarTendencias(valoresCalculo24hs, tendencia24Hs, maximo24
  mediaPonderada5H= instrumentos.mediaMovilPonderada(valoresCalculo5hs);
  mediaPonderada24H= instrumentos.mediaMovilPonderada(valoresCalculo24hs);
 
+
  
  
 
 
  wsCandles1m.onmessage= (event) => {  //web socket tiene conexion constante y me envia la infoen el tiemp estipulado
+    
     let datos = JSON.parse(event.data)
     contadorVelasMinuto++
     if(contadorVelasMinuto==2){
@@ -182,6 +225,27 @@ await funciones.actualizarTendencias(valoresCalculo24hs, tendencia24Hs, maximo24
         instrumentos.estocasticoK(valoresEstocastico1m,ArrayEstocasticosRapidos1m, estocasticoKV1m);
         instrumentos.estocasticoD(ArrayEstocasticosRapidos1m, estocasticoDV1m);
         instrumentos.comparadorEstocasticos(estocasticoKV1m, estocasticoDV1m, senialEstocastica1m);
+
+        valoresMACDcorto1m.push(datos.k.c);
+        valoresMACDcorto1m.shift();
+        valoresMACDlargo1m.push(datos.k.c)
+        valoresMACDlargo1m.shift();
+       
+        instrumentos.MACD(valoresMACDcorto1m, valoresMACDlargo1m, MACDs1m);
+        MACDs1m.shift()
+        senial1m = instrumentos.mediaMovilPonderada(MACDs1m)
+        histograma1m.push(MACDs1m[MACDs1m.length-1]-senial1m);
+        if(histograma1m.length>9){
+            histograma1m.shift();
+        }
+
+        
+        instrumentos.indicadorTendenciaSchaff(valoresCalculo1hs.slice(38), valoresCalculo1hs.slice(11),[...MACDs1m],schaff)
+        if(schaff.length>9){
+            schaff.shift()
+        }
+        
+
     }
         
 }
@@ -197,6 +261,19 @@ wsCandles3m.onmessage=(event)=>{
         instrumentos.estocasticoK(valoresEstocastico3m,ArrayEstocasticosRapidos3m, estocasticoKV3m);
         instrumentos.estocasticoD(ArrayEstocasticosRapidos3m, estocasticoDV3m);
         instrumentos.comparadorEstocasticos(estocasticoKV3m, estocasticoDV3m, senialEstocastica3m);
+
+        valoresMACDcorto3m.push(datos.k.c);
+        valoresMACDcorto3m.shift();
+        valoresMACDlargo3m.push(datos.k.c)
+        valoresMACDlargo3m.shift();
+       
+        instrumentos.MACD(valoresMACDcorto3m, valoresMACDlargo3m, MACDs3m);
+        MACDs3m.shift()
+        senial3m = instrumentos.mediaMovilPonderada(MACDs3m)
+        histograma3m.push(MACDs3m[MACDs3m.length-1]-senial3m);
+        if(histograma3m.length>9){
+            histograma3m.shift();
+        }
    }
 }
 wsCandles5m.onmessage=(event)=>{
@@ -248,6 +325,23 @@ wsPrice.onmessage= (event) => {  //web socket tiene conexion constante y me envi
         valoresEstocastico.push(precio);
         if(valoresEstocastico.length>20){
         valoresEstocastico.shift()}
+        valoresMACDlargo1s.push(precio)
+        if(valoresMACDlargo1s.length>26){
+            valoresMACDlargo1s.shift()
+        }
+        valoresMACDcorto1s.push(precio)
+        if(valoresMACDcorto1s.length>12){
+            valoresMACDcorto1s.shift()
+        }
+        instrumentos.MACD(valoresMACDcorto1s, valoresMACDlargo1s, MACDs1s);
+        if(MACDs1s.length>9){
+            MACDs1s.shift()
+        }
+        senial1s= instrumentos.mediaMovilPonderada(MACDs1s)
+        histograma1s.push((MACDs1s[MACDs1s.length-1]-senial1s))
+        if(histograma1s.length>9){
+            histograma1s.shift()
+        }
         
         console.log(`------- Cargando datos ${contadorInicial- valoresCalculoM.length}`)
         
@@ -257,19 +351,50 @@ wsPrice.onmessage= (event) => {  //web socket tiene conexion constante y me envi
         valoresEstocastico.push(precio);
         if(valoresEstocastico.length>20){
         valoresEstocastico.shift()}
+        valoresMACDlargo1s.push(precio)
+        if(valoresMACDlargo1s.length>26){
+            valoresMACDlargo1s.shift()
+        }
+        valoresMACDcorto1s.push(precio)
+        if(valoresMACDcorto1s.length>12){
+            valoresMACDcorto1s.shift()
+        }
+        instrumentos.MACD(valoresMACDcorto1s, valoresMACDlargo1s, MACDs1s);
+        if(MACDs1s.length>9){
+            MACDs1s.shift()
+        }
+        senial1s= instrumentos.mediaMovilPonderada(MACDs1s)
+        histograma1s.push((MACDs1s[MACDs1s.length-1]-senial1s))
+        if(histograma1s.length>9){
+            histograma1s.shift()
+        }
         console.log(`Iniciando programa`)
     }
     else{
-        console.clear();
+        
         valoresEstocastico.push(precio);
        
         valoresEstocastico.shift()
-        console.log(valoresEstocastico.length)
+    
         instrumentos.estocasticoK(valoresEstocastico,ArrayEstocasticosRapidos, estocasticoKV);
         instrumentos.estocasticoD(ArrayEstocasticosRapidos, estocasticoDV);
         instrumentos.comparadorEstocasticos(estocasticoKV, estocasticoDV, senialEstocastica);
 
-
+        valoresMACDlargo1s.push(precio)
+        
+            valoresMACDlargo1s.shift()
+        
+        valoresMACDcorto1s.push(precio)
+        
+            valoresMACDcorto1s.shift()
+        
+        instrumentos.MACD(valoresMACDcorto1s, valoresMACDlargo1s, MACDs1s);
+        
+            MACDs1s.shift()
+        
+        senial1s= instrumentos.mediaMovilPonderada(MACDs1s)
+        histograma1s.push((MACDs1s[MACDs1s.length-1]-senial1s))
+        histograma1s.shift()
     //recuperar datos posicion
 if(posicionAbierta==true){
     api.consultarPosicion("btcusdt")
@@ -287,7 +412,7 @@ if(posicionAbierta==true){
 
 
 
-  
+
  
 console.log(`---------------------------------------------${precio}-------------------------------------------`)
 console.log(`24HS ----  Pmax: ${maximo24} ----Pmin: ${minimo24} ---- TENDENCIA: ${tendencia24Hs}-----MPond: ${mediaPonderada24H}`)
@@ -313,7 +438,23 @@ console.log("-----------------------------Estocastico 3 minutos-----------------
 console.log("Estocastico K 3M: "+ estocasticoKV3m)
 console.log("Estocastico K 3M: "+ estocasticoDV3m)
 console.log("3m : " + senialEstocastica3m)
-
+console.log("-----------------------------MACD 1 segundo----------------------"+ valoresMACDlargo1m.length + "-" + valoresMACDcorto1m.length)
+console.log("MACD 1s: "+ MACDs1s[MACDs1s.length-1])
+console.log("Señal  1s: "+ senial1s)
+console.log("Histograma 1s : " + histograma1s)
+console.log("-----------------------------MACD 1 minuto----------------------"+ valoresMACDlargo1m.length + "-" + valoresMACDcorto1m.length)
+console.log("MACD 1M: "+ MACDs1m[MACDs1m.length-1])
+console.log("Señal  1M: "+ senial1m)
+console.log("Histograma 1M : " + histograma1m)
+console.log("-----------------------------MACD 3 minutos----------------------"+ valoresMACDlargo3m.length + "-" + valoresMACDcorto3m.length)
+console.log("MACD 1M: "+ MACDs3m[MACDs3m.length-1])
+console.log("Señal  1M: "+ senial3m)
+console.log("Histograma 1M : " + histograma3m)
+console.log("-------------------------Schaft----------------------------------")
+console.log("SCHAFF 1m: " + schaff)
+console.log(MACDs1m.length, MACDs1s.length, MACDs3m.length, valoresMACDcorto1m.length, valoresMACDcorto1s.length
+    , valoresMACDcorto3m.length, valoresMACDlargo1m.length, valoresMACDlargo1s.length, valoresMACDlargo3m.length, histograma1m.length,
+    histograma1s.length, histograma3m.length)
 
 
     

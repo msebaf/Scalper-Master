@@ -83,8 +83,7 @@ async function actualizarTendencias(valoresCalculoPeriodo,tendenciaPeriodo, maxi
         tendenciaPeriodo[0]="LATERAL"
     }
 
-    let actualizado;
-    return actualizado =true
+    
 }
 
 module.exports={
