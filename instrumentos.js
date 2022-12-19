@@ -242,7 +242,6 @@ async function CCI(velas, CCIs, preciosTipicos14p){
         precioTipicoActual = (parseFloat(velas[i][2])+parseFloat(velas[i][3])+parseFloat(velas[i][4]))/3
     }
     MdiaTipicos =await mediaMovil(preciosTipicos14p);
-    console.log(precioTipicoActual)
     CCIs.push((precioTipicoActual- MdiaTipicos)/(0.015* await desviacionEstandar(preciosTipicos14p,MdiaTipicos)))
    
     
@@ -253,7 +252,6 @@ else{
     preciosTipicos14p.push(precioTipicoActual);
     preciosTipicos14p.shift()
     MdiaTipicos = await mediaMovil(preciosTipicos14p);
-    console.log(MdiaTipicos);
     CCIs.push((precioTipicoActual- MdiaTipicos)/(0.015* await desviacionEstandar(preciosTipicos14p,MdiaTipicos)))
     CCIs.shift()
    

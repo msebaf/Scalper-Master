@@ -370,7 +370,7 @@ wsCandles30m.onmessage=(event)=>{
 wsPrice.onmessage= (event) => {  //web socket tiene conexion constante y me envia la infoen el tiemp estipulado
    console.clear();
    
-    
+
     const datos = JSON.parse(event.data);
     precio = parseFloat(datos.p);
     
@@ -477,57 +477,36 @@ if(posicionAbierta==true){
     precioDeEntrada=undefined;
 })}
 
-
-
-
- 
+console.clear()
 console.log(`---------------------------------------------${precio}-------------------------------------------`)
 console.log(`24HS ----  Pmax: ${maximo24} ----Pmin: ${minimo24} ---- TENDENCIA: ${tendencia24Hs}-----MPond: ${mediaPonderada24H}`)
 console.log(`5HS ----  Pmax: ${maximo5} ----Pmin: ${minimo5} ---- TENDENCIA: ${tendencia5Hs}-----MPond: ${mediaPonderada5H}`)
 console.log(`2HS ----  Pmax: ${maximo2} ----Pmin: ${minimo2} ---- TENDENCIA: ${tendencia2Hs}-----MPond: ${mediaPonderada2H}`)
 console.log(`1HS ----  Pmax: ${maximo1} ----Pmin: ${minimo1} ---- TENDENCIA: ${tendencia1H} -----MPond: ${mediaPonderada1H}`)
 console.log(`1M ----  Pmax: ${maximoM} ----Pmin: ${minimoM} ---- TENDENCIA: ${tendenciaM} -----MPond: ${mediaPonderada1M}`)
-console.log(`RSI Hora: ${RSIhora}`)
-console.log(`RSI minuto: ${RSIminuto}`)
-console.log(`Entrada: ${precioDeEntrada}`);
-console.log(`Profit: ${unrealizedProfit}`);
-console.log(`Tipo de Posicion ${tipoDePosicion}`)
-console.log(posicionAbierta)
-console.log("-----------------------------Estocastico 1 segundo----------------------"+ valoresEstocastico.length + "-" + ArrayEstocasticosRapidos.length)
-console.log("Estocastico K 1s: " + estocasticoKV)
-console.log("estocastico D 1s: " + estocasticoDV)
-console.log("1s : "+ senialEstocastica)
-console.log("-----------------------------Estocastico 1 minuto----------------------"+ valoresEstocastico1m.length + "-" + ArrayEstocasticosRapidos1m.length)
-console.log("Estocastico K 1M: "+ estocasticoKV1m)
-console.log("Estocastico K 1M: "+ estocasticoDV1m)
-console.log("1m : " + senialEstocastica1m)
-console.log("-----------------------------Estocastico 3 minutos----------------------"+ valoresEstocastico3m.length + "-" + ArrayEstocasticosRapidos3m.length)
-console.log("Estocastico K 3M: "+ estocasticoKV3m)
-console.log("Estocastico K 3M: "+ estocasticoDV3m)
-console.log("3m : " + senialEstocastica3m)
-console.log("-----------------------------MACD 1 segundo----------------------"+ valoresMACDlargo1m.length + "-" + valoresMACDcorto1m.length)
-console.log("MACD 1s: "+ MACDs1s[MACDs1s.length-1])
-console.log("Señal  1s: "+ senial1s)
-console.log("Histograma 1s : " + histograma1s)
-console.log("-----------------------------MACD 1 minuto----------------------"+ valoresMACDlargo1m.length + "-" + valoresMACDcorto1m.length)
-console.log("MACD 1M: "+ MACDs1m[MACDs1m.length-1])
-console.log("Señal  1M: "+ senial1m)
-console.log("Histograma 1M : " + histograma1m)
-console.log("-----------------------------MACD 3 minutos----------------------"+ valoresMACDlargo3m.length + "-" + valoresMACDcorto3m.length)
-console.log("MACD 3M: "+ MACDs3m[MACDs3m.length-1])
-console.log("Señal  3M: "+ senial3m)
-console.log("Histograma 3M : " + histograma3m)
-console.log("-------------------------Schaft----------------------------------")
-console.log("SCHAFF 1s: " + schaff1s)
-console.log("SCHAFF 1m: " + schaff1m)
-console.log("SCHAFF 3m: " + schaff3m)
-console.log("-------------------------Williams Percent Range 1m (14m)----------------------------------")
-console.log("WPC 1m: " + WPC1m)
-console.log("-------------------------ATR (volatilidad) 1m (14m)  y  CCI----------------------------------")
-console.log("ATR 1m: " + ATRs + " -----------------  CCI : " + CCIs + " ------------- SuperTrend : "+ signalST)
-console.log("upper : " + upperLevel + " lower: "+ lowerLevel + " precio : " + precio)
-console.log("control : "+ controladorSeñales)
-
+console.log(`Entrada: ${precioDeEntrada}  |  Profit: ${unrealizedProfit}  |  Tipo de Posicion ${tipoDePosicion}  |  Pabierta : ${posicionAbierta}`);
+console.log(`---------------------------------------------- RSI -----------------------------------------------------`)
+console.log(`RSI Hora: ${RSIhora}  |  RSI minuto: ${RSIminuto} `)
+console.log(`-----------------------------Estocastico 1 segundo---------------------- ${valoresEstocastico.length} - ${ArrayEstocasticosRapidos.length}`)
+console.log(`Estocastico K 1s: ${estocasticoKV}  | estocastico D 1s: ${estocasticoDV}  |  Señal 1s : ${senialEstocastica}`)
+console.log(`-----------------------------Estocastico 1 minuto----------------------  ${valoresEstocastico1m.length} - ${ArrayEstocasticosRapidos1m.length}`)
+console.log(`Estocastico K 1M: ${estocasticoKV1m}  |  Estocastico K 1M: ${estocasticoDV1m}  | Señal 1m : ${senialEstocastica1m}`)
+console.log(`-----------------------------Estocastico 3 minutos---------------------- ${valoresEstocastico3m.length} - ${ArrayEstocasticosRapidos3m.length}`)
+console.log(`Estocastico K 3M:  ${estocasticoKV3m}  |  Estocastico K 3M: ${estocasticoDV3m}  |  Señal 3m : ${senialEstocastica3m}`)
+console.log(`-----------------------------MACD 1 segundo---------------------- ${valoresMACDlargo1m.length} - ${valoresMACDcorto1m.length}`)
+console.log(`MACD 1s: ${MACDs1s[MACDs1s.length-1]}  |  Señal  1s: ${senial1s}  |  Histograma 1s : ${histograma1s}`)
+console.log(`-----------------------------MACD 1 minuto---------------------- ${valoresMACDlargo1m.length}  -  ${valoresMACDcorto1m.length}`)
+console.log(`MACD 1M:  ${MACDs1m[MACDs1m.length-1]}  |  Señal  1M:  ${senial1m}  |  Histograma 1M :  ${histograma1m}`)
+console.log(`-----------------------------MACD 3 minutos---------------------- ${valoresMACDlargo3m.length}  - ${valoresMACDcorto3m.length}`)
+console.log(`MACD 3M:  ${MACDs3m[MACDs3m.length-1]}  |  Señal  3M:  ${senial3m}  |  Histograma 3M :  ${histograma3m}`)
+console.log(`-------------------------Schaft----------------------------------`)
+console.log(`SCHAFF 1s: ${schaff1s}  |  SCHAFF 1m: ${schaff1m}  |  SCHAFF 3m: ${schaff3m}`)
+console.log(`-------------------------Williams Percent Range 1m (14m)----------------------------------`)
+console.log(`WPC 1m: ${WPC1m}`)
+console.log(`-------------------------ATR (volatilidad) 1m (14m)  y  CCI----------------------------------`)
+console.log(`ATR 1m: ${ATRs}  -----------------  CCI : ${CCIs}  ------------- SuperTrend : ${signalST}`)
+console.log(`upper : ${upperLevel} -- lower: ${lowerLevel} -- precio : ${precio}`)
+console.log(`control :  ${controladorSeñales}`)
 console.log(MACDs1m.length, MACDs1s.length, MACDs3m.length, valoresMACDcorto1m.length, valoresMACDcorto1s.length
     , valoresMACDcorto3m.length, valoresMACDlargo1m.length, valoresMACDlargo1s.length, valoresMACDlargo3m.length, histograma1m.length,
     histograma1s.length, histograma3m.length)
