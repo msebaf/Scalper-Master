@@ -188,6 +188,100 @@ async function indicadorTendenciaSchaff(arrayCorto, arrayLargo,MACDs,schaffV){
 
 }
 
+async function WilliamsPercentRange(maximos, minimos, closePrice, WPC){
+    
+    let maximo = Math.max(...maximos)
+    let minimo = Math.min(...minimos);
+    WPC.push((maximo-closePrice)/(maximo-minimo)*-100)
+    if(WPC.length>9){
+        WPC.shift()
+    }
+}
+
+async function ATR(velas, ATRs, cierreAnterior){
+    let v1,v2,v3;
+    if(ATRs.length == 0){
+        
+        let valoresMayoresPorPeriodo =[]
+        
+        for (let i =46 ; i < 61; i++){
+            v1=parseFloat(velas[i][2])- parseFloat(velas[i][3])
+            v2 = Math.abs(parseFloat(velas[i][2])- parseFloat(velas[i-1][4]))
+            v3 = Math.abs(parseFloat(velas[i][3])- parseFloat(velas[i-1][4]))
+            valoresMayoresPorPeriodo.push(Math.max(v1,v2,v3))
+            cierreAnterior.push(parseFloat(velas[i][4]))
+           
+        }
+        
+        ATRs.push(mediaMovil(valoresMayoresPorPeriodo));
+    }
+    else{
+        let RangoVerdaderUltimo;
+        v1= parseFloat(velas.k.h) - parseFloat(velas.k.l);
+            v2 = Math.abs(parseFloat(velas.k.h) - cierreAnterior[0])
+            v3 = Math.abs(parseFloat(velas.k.l)- cierreAnterior[0])
+            RangoVerdaderUltimo= Math.max(v1,v2,v3)
+            
+            cierreAnterior.push(parseFloat(velas.k.c))
+            cierreAnterior.shift();
+        let atrAnt = await ATRs[0]
+        ATRs.push(((atrAnt*13)+RangoVerdaderUltimo)/14);
+        ATRs.shift();
+    }
+
+}
+
+async function CCI(velas, CCIs, preciosTipicos14p){
+    let precioTipicoActual;
+    let MdiaTipicos;
+    
+
+    if(preciosTipicos14p.length == 0){
+    for (let i =46 ; i < 61; i++){
+        preciosTipicos14p.push((parseFloat(velas[i][2])+parseFloat(velas[i][3])+parseFloat(velas[i][4]))/3)
+        precioTipicoActual = (parseFloat(velas[i][2])+parseFloat(velas[i][3])+parseFloat(velas[i][4]))/3
+    }
+    MdiaTipicos =await mediaMovil(preciosTipicos14p);
+    console.log(precioTipicoActual)
+    CCIs.push((precioTipicoActual- MdiaTipicos)/(0.015* await desviacionEstandar(preciosTipicos14p,MdiaTipicos)))
+   
+    
+    
+}
+else{
+    precioTipicoActual = (parseFloat(velas.k.h)+parseFloat(velas.k.l)+parseFloat(velas.k.c))/3
+    preciosTipicos14p.push(precioTipicoActual);
+    preciosTipicos14p.shift()
+    MdiaTipicos = await mediaMovil(preciosTipicos14p);
+    console.log(MdiaTipicos);
+    CCIs.push((precioTipicoActual- MdiaTipicos)/(0.015* await desviacionEstandar(preciosTipicos14p,MdiaTipicos)))
+    CCIs.shift()
+   
+}
+
+}
+
+async function supertrendACtualiador(vela, upperLevel, lowerLevel, atr){
+    
+        upperLevel[0]=(((parseFloat(vela.k.h) +parseFloat(vela.k.l))/2) + 1 *atr[0])
+        lowerLevel[0]=(((parseFloat(vela.k.h) +parseFloat(vela.k.l))/2) - 1 *atr[0])
+    
+  
+}
+async function supertrendComparador(upperLevel, lowerLevel, price, indicador, controladorSeñales){
+    if(price > upperLevel[0]){
+        indicador[0] = "RED//SELL"
+        controladorSeñales.push(indicador[0]);
+    }
+    else if(price< lowerLevel[0]){
+        indicador[0] = "GREEN//BUY"
+        controladorSeñales.push(indicador[0]);
+    }
+    else{
+        indicador[0] = "No Signal"
+    }
+}
+
 module.exports={
     calculadoraRSI,
     mediaMovil,
@@ -198,5 +292,10 @@ module.exports={
     MACD,
     indicadorTendenciaSchaff,
     comparadorEstocasticos,
+    WilliamsPercentRange,
+    ATR,
+    CCI,
+    supertrendACtualiador,
+    supertrendComparador,
 
 }

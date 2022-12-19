@@ -19,8 +19,33 @@ let candels5m;
 let candels15m;
 let candels30m
 let precio;
+let preciosCandles61de3m=[];
+let preciosCandles61de5m=[];
+let preciosCandles61de15m=[];
+let preciosCandles61de30m=[];
+
+//-----------SuperTrend------
+
+let signalST=[];
+let lowerLevel=[];
+let upperLevel= [];
+let controladorSeñales=[]
+
+//------------CCI------------
+let CCIs=[];
+let CCIpreciosTipicos14p=[];
+
+//------------ATR------------
+let ATRs=[];
+let ATRcierreAnt=[]
+//----------------Williams Percent Range---------
+let maximosWilliam1m=[];
+let minimosWilliam1m=[];
+let WPC1m=[]
 //-------------------shaff------------------
-let schaff=[]
+let schaff1s=[]
+let schaff1m=[]
+let schaff3m=[]
 //------------------datos para MACD----------
 let valoresMACDlargo1s=[];
 let valoresMACDcorto1s=[];
@@ -126,15 +151,29 @@ let tipoDeMercado2H1H1M;
 
 async function operar(){
 candels1m=  await api.recuperarHistoricoVelas("btcusdt", "1m", 61);
-candels3m= await api.recuperarHistoricoVelas("btcusdt", "3m", 35);
-candels5m= await api.recuperarHistoricoVelas("btcusdt", "5m", 25);
-candels15m= await api.recuperarHistoricoVelas("btcusdt", "15m", 21);
-candels30m= await api.recuperarHistoricoVelas("btcusdt", "30m", 49);
+candels3m= await api.recuperarHistoricoVelas("btcusdt", "3m", 61);
+candels5m= await api.recuperarHistoricoVelas("btcusdt", "5m", 61);
+candels15m= await api.recuperarHistoricoVelas("btcusdt", "15m", 61);
+candels30m= await api.recuperarHistoricoVelas("btcusdt", "30m", 61);
+
+instrumentos.ATR(candels1m, ATRs, ATRcierreAnt);
+instrumentos.CCI(candels1m, CCIs, CCIpreciosTipicos14p)
+
+
+
 funciones.recoleccionDeDAtos(candels1m, valoresCalculo1hs,61)
-funciones.recoleccionDeDAtos(candels3m, datosParaRSIhora, 35);
-funciones.recoleccionDeDAtos(candels5m, valoresCalculo2hs, 25)
-funciones.recoleccionDeDAtos(candels15m, valoresCalculo5hs,21)
-funciones.recoleccionDeDAtos(candels30m, valoresCalculo24hs, 49)
+funciones.recoleccionDeDAtos(candels3m, preciosCandles61de3m, 61);
+funciones.recoleccionDeDAtos(candels5m, preciosCandles61de5m, 61)
+funciones.recoleccionDeDAtos(candels15m, preciosCandles61de15m,61)
+funciones.recoleccionDeDAtos(candels30m, preciosCandles61de30m, 61)
+datosParaRSIhora = preciosCandles61de3m.slice(26);
+valoresCalculo2hs = preciosCandles61de5m.slice(36);
+valoresCalculo5hs= preciosCandles61de15m.slice(40);
+valoresCalculo24hs = preciosCandles61de30m.slice(12);
+
+funciones.recoleccionDeDAtos(candels1m, maximosWilliam1m,61,14,2)
+funciones.recoleccionDeDAtos(candels1m, minimosWilliam1m,61,14,3)
+
 
 
 await funciones.actualizarTendencias(valoresCalculo1hs, tendencia1H, maximo1,minimo1,maximosMayoresAlMAximo1, minimosMenoresAlMinimo1,entreRangoACt1);
@@ -214,7 +253,11 @@ histograma3m.push(MACDs3m[MACDs3m.length-1]-senial3m)
     }
     
    if(datos.k.x==true){
+    instrumentos.ATR(datos, ATRs, ATRcierreAnt);
+    instrumentos.CCI(datos, CCIs, CCIpreciosTipicos14p)
+    instrumentos.supertrendACtualiador(datos,upperLevel,lowerLevel,ATRs)
     
+        
     valoresCalculo1hs.push(datos.k.c);
     valoresCalculo1hs.shift();
     mediaPonderada1H= instrumentos.mediaMovilPonderada(valoresCalculo1hs);
@@ -232,20 +275,28 @@ histograma3m.push(MACDs3m[MACDs3m.length-1]-senial3m)
         valoresMACDlargo1m.shift();
        
         instrumentos.MACD(valoresMACDcorto1m, valoresMACDlargo1m, MACDs1m);
+        if(MACDs1m.length>10){
         MACDs1m.shift()
-        senial1m = instrumentos.mediaMovilPonderada(MACDs1m)
+        }
+        senial1m = instrumentos.mediaMovilPonderada(MACDs1m.slice(1))
         histograma1m.push(MACDs1m[MACDs1m.length-1]-senial1m);
         if(histograma1m.length>9){
             histograma1m.shift();
         }
 
         
-        instrumentos.indicadorTendenciaSchaff(valoresCalculo1hs.slice(38), valoresCalculo1hs.slice(11),[...MACDs1m],schaff)
-        if(schaff.length>9){
-            schaff.shift()
+        instrumentos.indicadorTendenciaSchaff(valoresCalculo1hs.slice(38), valoresCalculo1hs.slice(11),[...MACDs1m],schaff1m)
+        if(schaff1m.length>9){
+            schaff1m.shift()
         }
         
+        maximosWilliam1m.push(datos.k.h);
+        minimosWilliam1m.push(datos.k.l);
+        maximosWilliam1m.shift();
+        minimosWilliam1m.shift();
+        instrumentos.WilliamsPercentRange(maximosWilliam1m,minimosWilliam1m,datos.k.c,WPC1m);
 
+        
     }
         
 }
@@ -268,12 +319,21 @@ wsCandles3m.onmessage=(event)=>{
         valoresMACDlargo3m.shift();
        
         instrumentos.MACD(valoresMACDcorto3m, valoresMACDlargo3m, MACDs3m);
+        if(MACDs3m.length>10){
         MACDs3m.shift()
-        senial3m = instrumentos.mediaMovilPonderada(MACDs3m)
+        }
+        senial3m = instrumentos.mediaMovilPonderada(MACDs3m.slice(1))
         histograma3m.push(MACDs3m[MACDs3m.length-1]-senial3m);
         if(histograma3m.length>9){
             histograma3m.shift();
         }
+        preciosCandles61de3m.push(datos.k.c);
+        preciosCandles61de3m.shift();
+        instrumentos.indicadorTendenciaSchaff(preciosCandles61de3m.slice(38), preciosCandles61de3m.slice(11),[...MACDs3m],schaff3m);
+        if(schaff3m.length>9){
+            schaff3m.shift()
+        }
+        
    }
 }
 wsCandles5m.onmessage=(event)=>{
@@ -334,10 +394,10 @@ wsPrice.onmessage= (event) => {  //web socket tiene conexion constante y me envi
             valoresMACDcorto1s.shift()
         }
         instrumentos.MACD(valoresMACDcorto1s, valoresMACDlargo1s, MACDs1s);
-        if(MACDs1s.length>9){
+        if(MACDs1s.length>10){
             MACDs1s.shift()
         }
-        senial1s= instrumentos.mediaMovilPonderada(MACDs1s)
+        senial1s= instrumentos.mediaMovilPonderada(MACDs1s.slice(1))
         histograma1s.push((MACDs1s[MACDs1s.length-1]-senial1s))
         if(histograma1s.length>9){
             histograma1s.shift()
@@ -360,10 +420,10 @@ wsPrice.onmessage= (event) => {  //web socket tiene conexion constante y me envi
             valoresMACDcorto1s.shift()
         }
         instrumentos.MACD(valoresMACDcorto1s, valoresMACDlargo1s, MACDs1s);
-        if(MACDs1s.length>9){
+        if(MACDs1s.length>10){
             MACDs1s.shift()
         }
-        senial1s= instrumentos.mediaMovilPonderada(MACDs1s)
+        senial1s= instrumentos.mediaMovilPonderada(MACDs1s.slice(1))
         histograma1s.push((MACDs1s[MACDs1s.length-1]-senial1s))
         if(histograma1s.length>9){
             histograma1s.shift()
@@ -372,6 +432,7 @@ wsPrice.onmessage= (event) => {  //web socket tiene conexion constante y me envi
     }
     else{
         
+        instrumentos.supertrendComparador(upperLevel, lowerLevel, precio, signalST);
         valoresEstocastico.push(precio);
        
         valoresEstocastico.shift()
@@ -389,12 +450,18 @@ wsPrice.onmessage= (event) => {  //web socket tiene conexion constante y me envi
             valoresMACDcorto1s.shift()
         
         instrumentos.MACD(valoresMACDcorto1s, valoresMACDlargo1s, MACDs1s);
-        
+         
             MACDs1s.shift()
         
-        senial1s= instrumentos.mediaMovilPonderada(MACDs1s)
+        senial1s= instrumentos.mediaMovilPonderada(MACDs1s.slice(1))
         histograma1s.push((MACDs1s[MACDs1s.length-1]-senial1s))
         histograma1s.shift()
+
+        instrumentos.indicadorTendenciaSchaff(valoresCalculoM.slice(38), valoresCalculoM.slice(11),[...MACDs1s],schaff1s)
+        if(schaff1s.length>9){
+            schaff1s.shift()
+        }
+        
     //recuperar datos posicion
 if(posicionAbierta==true){
     api.consultarPosicion("btcusdt")
@@ -447,11 +514,20 @@ console.log("MACD 1M: "+ MACDs1m[MACDs1m.length-1])
 console.log("Señal  1M: "+ senial1m)
 console.log("Histograma 1M : " + histograma1m)
 console.log("-----------------------------MACD 3 minutos----------------------"+ valoresMACDlargo3m.length + "-" + valoresMACDcorto3m.length)
-console.log("MACD 1M: "+ MACDs3m[MACDs3m.length-1])
-console.log("Señal  1M: "+ senial3m)
-console.log("Histograma 1M : " + histograma3m)
+console.log("MACD 3M: "+ MACDs3m[MACDs3m.length-1])
+console.log("Señal  3M: "+ senial3m)
+console.log("Histograma 3M : " + histograma3m)
 console.log("-------------------------Schaft----------------------------------")
-console.log("SCHAFF 1m: " + schaff)
+console.log("SCHAFF 1s: " + schaff1s)
+console.log("SCHAFF 1m: " + schaff1m)
+console.log("SCHAFF 3m: " + schaff3m)
+console.log("-------------------------Williams Percent Range 1m (14m)----------------------------------")
+console.log("WPC 1m: " + WPC1m)
+console.log("-------------------------ATR (volatilidad) 1m (14m)  y  CCI----------------------------------")
+console.log("ATR 1m: " + ATRs + " -----------------  CCI : " + CCIs + " ------------- SuperTrend : "+ signalST)
+console.log("upper : " + upperLevel + " lower: "+ lowerLevel + " precio : " + precio)
+console.log("control : "+ controladorSeñales)
+
 console.log(MACDs1m.length, MACDs1s.length, MACDs3m.length, valoresMACDcorto1m.length, valoresMACDcorto1s.length
     , valoresMACDcorto3m.length, valoresMACDlargo1m.length, valoresMACDlargo1s.length, valoresMACDlargo3m.length, histograma1m.length,
     histograma1s.length, histograma3m.length)

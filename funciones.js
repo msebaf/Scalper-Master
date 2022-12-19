@@ -3,11 +3,16 @@ const api = require("./api");
 const instrumentos = require("./instrumentos")
 
 
-async function recoleccionDeDAtos(candels, dataStorage, cantDAtos){
-       
-    for (let i = 0; i < cantDAtos; i++) {
+async function recoleccionDeDAtos(candels, dataStorage, cantDAtos, cantDAtosArecoger, opcionalposicionDeDedatos){
+       if(!cantDAtosArecoger){
+        cantDAtosArecoger=cantDAtos;
+       }
+       if(!opcionalposicionDeDedatos){
+        opcionalposicionDeDedatos=4
+       }
+    for (let i = 0 + (cantDAtos - cantDAtosArecoger); i < cantDAtos; i++) {
       
-        dataStorage.push(parseFloat(candels[i][4]))
+        dataStorage.push(parseFloat(candels[i][opcionalposicionDeDedatos]))
                 
     }
    
