@@ -76,6 +76,39 @@ function mediaMovilPonderada(arrayDePrecios){
 
 }
 
+async function mediaMovilSuavizada(arraySuavizadas, promedioMovil, vela){
+    let SMMA;
+    let suma=0;
+        if(promedioMovil.length==0){
+            SMMA = ((arraySuavizadas[0]+arraySuavizadas[1])/2)
+            for(i= 2; i< arraySuavizadas.length; i++){
+                for (let k = 0; k < i; k++) {
+                
+                    suma+= arraySuavizadas[k];
+                   
+                    SMMA= (suma-SMMA + arraySuavizadas[i])/(i)
+                    promedioMovil[0]= SMMA;
+                    
+                }
+                suma=0
+            }
+        }
+        else{
+            for(i= 0; i< arraySuavizadas.length; i++){
+
+                    suma+= arraySuavizadas[i]   
+            }
+            SMMA= (suma - promedioMovil[0] +parseFloat(vela.k.c))/arraySuavizadas.length
+            arraySuavizadas.push[SMMA]
+            if(arraySuavizadas.length>250){
+                arraySuavizadas.shift()
+            }
+            promedioMovil[0]=SMMA;
+        }
+        
+        return SMMA;
+}
+
 //checkeada con Ejemplos de internet ---- de diez!!!
 async function desviacionEstandar(ArrayEsto,media){
    
@@ -280,6 +313,223 @@ async function supertrendComparador(upperLevel, lowerLevel, price, indicador, co
     }
 }
 
+async function experimentalAlligator(labios, mandibula, dientes,promedioMobilAlliLabio,promedioMobilAlliDiente,promedioMobilAlliMandibula, arrayLabio,arrayDiente, arrayMandibula, vela){
+    arrayLabio.shift();
+    arrayDiente.shift()
+    arrayMandibula.shift()
+    let velaBis;
+    if(vela){
+    velaBis = JSON.parse(JSON.stringify(vela))
+    velaBis.k.c = ((parseFloat(velaBis.k.h)+parseFloat(velaBis.k.l))/2).toString();
+    }
+    let nuevolabio =  mediaMovilSuavizada(arrayLabio, promedioMobilAlliLabio,velaBis)
+    let nuevoDiente = mediaMovilSuavizada(arrayDiente, promedioMobilAlliDiente,velaBis)
+    let nuevaManibula = mediaMovilSuavizada(arrayMandibula, promedioMobilAlliMandibula,velaBis)
+    labios.push(await nuevolabio);
+    mandibula.push(await nuevaManibula);
+    dientes.push(await nuevoDiente);
+    if(labios.length>10){
+        labios.shift
+    }
+    if(mandibula.length>10){
+        mandibula.shift()
+    }
+    if(dientes.length>10){
+        dientes.shift()
+    }
+
+
+}
+
+async function gator(valoresPositivos, valoresNegativos,codigoColor, labios, mandibulas, dientes){
+    let colorP;
+    let colorN;
+    let valoresN= [...valoresNegativos];
+    let valoresP = [...valoresPositivos];
+    codigoColor[0]=codigoColor[1] 
+     for (let i = 0; i <await  mandibulas.length; i++) {
+        valoresP[i]= (Math.abs(mandibulas[i]- await dientes[i]));
+        valoresPositivos[i]= await valoresP[i]
+        valoresN[i]= Math.abs(dientes[i]-await labios[i]);
+        valoresNegativos[i]= await valoresN[i]
+     }
+     for (let i = 1; i < valoresN.length; i++) {
+            if(await valoresP[i]>await valoresP[i-1]){
+                colorP="VERDE"
+            }
+            else if(await valoresP[i]<await valoresP[i-1]){
+                colorP="ROJO";
+            }
+            if(await valoresN[i]>await valoresN[i-1]){
+                colorN="VERDE"
+            }
+            else if(await valoresN[i]<await valoresN[i-1]){
+                colorN="ROJO"
+            }
+
+           codigoColor[i] =  `(${colorP}-${colorN})`;
+         
+     }
+     
+    
+
+}
+
+async function DMI(velas,DMpositivo14d, DMnegativo14d, DIpositivo, DInegativo,maxVelaAnt, minVElaAnt, cierreVelaAnt, TR14, DX, ADX){
+ 
+
+
+ let v1,v2,v3;
+ let DMp;
+ let DMn;
+ 
+ if(DIpositivo.length==0){
+    for(let i =47; i<61;i++){
+        
+        if(DMnegativo14d.length==0){
+            DMnegativo14d[0]=0
+            DMpositivo14d[0]=0;
+            TR14[0]=0
+         for (let k = i-14; k < i; k++) {
+            DMp=parseFloat(velas[k][2]) - parseFloat(velas[k-1][2])
+            DMn=parseFloat(velas[k][3]) - parseFloat(velas[k-1][3])
+            if(DMp>DMn && DMp>0){            
+           DMpositivo14d[0] += DMp
+            }
+            else{
+                DMpositivo14d[0]+=0
+            }
+            if(DMn>DMp && DMn>0){            
+                DMnegativo14d[0] += DMn
+                 }
+                 else{
+                     DMnegativo14d[0]+=0
+                 }
+           v1 = parseFloat(velas[k][2])- parseFloat(velas[k][3])
+          v2 = parseFloat(velas[k][2])- parseFloat(velas[k-1][4])
+           v3 = parseFloat(velas[k-1][4])- parseFloat(velas[k][3])
+           
+          tr= Math.max(v1,v2,v3)
+          TR14[0]+= tr;
+           minVElaAnt[0]= parseFloat(velas[k][3])
+           maxVelaAnt[0] = parseFloat(velas[k][2])
+           cierreVelaAnt[0]= parseFloat(velas[k][4])
+          
+    
+   
+       
+    }
+    
+    }
+    else{ 
+
+        DMp=parseFloat(velas[i][2]) - parseFloat(velas[i-1][2])
+        DMn=parseFloat(velas[i][3]) - parseFloat(velas[i-1][3])
+        if(DMp>DMn && DMp>0){            
+            DMpositivo14d[0] = DMpositivo14d[0]- (DMpositivo14d[0]/14) + (DMp)
+        }
+        else{
+            DMpositivo14d[0]+=0
+        }
+        if(DMn>DMp && DMn>0){            
+            DMnegativo14d[0] = DMnegativo14d[0] - (DMnegativo14d[0]/14) + (DMn)
+             }
+             else{
+                 DMnegativo14d[0]+=0
+             }
+      
+       
+    v1 = parseFloat(velas[i][2])- parseFloat(velas[i][3])
+    v2 = parseFloat(velas[i][4])- cierreVelaAnt[0]
+    v3 = cierreVelaAnt[0]- parseFloat(velas[i][3])
+    tr= Math.max(v1,v2,v3)
+    TR14[0]= TR14[0] - (TR14[0]/14) + tr;
+    
+    let DIn =(DMnegativo14d[0]/TR14[0])*100
+    let DIp= (DMpositivo14d[0]/TR14[0])*100
+    
+    DInegativo.push(DIn);
+    DIpositivo.push(DIp)
+    DX.push(Math.abs((DIp-DIn)/ (DIp+DIn)))
+    if(ADX.length==0){
+        ADX[0]= DX[0]
+    }
+    else{
+        ADX[0]= ((ADX[0]*13+DX[DX.length-1])/14)
+    }
+
+        minVElaAnt[0]= parseFloat(velas[i][3])
+        maxVelaAnt[0] = parseFloat(velas[i][2])
+        cierreVelaAnt[0] = parseFloat(velas[i][4])
+
+
+    if(DInegativo.length>14){
+        DInegativo.shift()
+        DIpositivo.shift()
+        DX.shift()
+    }
+       
+       
+    }
+
+    }
+    
+
+}
+   
+else{
+
+    DMp=parseFloat(parseFloat(velas.k.h)- maxVelaAnt[0])
+    DMn=parseFloat(parseFloat(velas.k.l)- minVElaAnt[0])
+    if(DMp>DMn && DMp>0){            
+        DMpositivo14d[0] = DMpositivo14d[0]- (DMpositivo14d[0]/14) + (DMp)
+    }
+    else{
+        DMpositivo14d+=0;
+    }
+    if(DMn>DMp && DMn>0){            
+        DMnegativo14d[0] = DMnegativo14d[0] - (DMnegativo14d[0]/14) + (DMn)
+         }
+         else{
+             DMnegativo14d[0]+=0
+         }
+    
+
+   
+    v1 = parseFloat(velas.k.h)- parseFloat(velas.k.l)
+    v2 = parseFloat(velas.k.c)- cierreVelaAnt[0]
+    v3 = cierreVelaAnt[0]- parseFloat(velas.k.l)
+    tr= Math.max(v1,v2,v3)
+    TR14[0]= TR14[0] - (TR14[0]/14) + tr;
+   
+    minVElaAnt[0]= parseFloat(velas.k.l)
+        maxVelaAnt[0] = parseFloat(velas.k.h)
+        cierreVelaAnt[0] = parseFloat(velas.k.c)
+       
+
+        let DIn =(DMnegativo14d[0]/TR14[0])*100
+        let DIp= (DMpositivo14d[0]/TR14[0])*100
+        
+        DInegativo.push(DIn);
+        DIpositivo.push(DIp)
+        DX.push(100*(Math.abs((DIp-DIn)/ (DIp+DIn))))
+        ADX[0]= ((ADX[0]*13+DX[DX.length-1])/14)
+
+        if(DInegativo.length>14){
+            DInegativo.shift()
+            DIpositivo.shift()
+            DX.shift()
+        }
+        
+       
+    
+}
+
+
+
+}
+
+
 module.exports={
     calculadoraRSI,
     mediaMovil,
@@ -295,5 +545,9 @@ module.exports={
     CCI,
     supertrendACtualiador,
     supertrendComparador,
+    mediaMovilSuavizada,
+    experimentalAlligator,
+    gator,
+    DMI,
 
 }

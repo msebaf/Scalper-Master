@@ -136,6 +136,45 @@ let precioDeEntrada=0.0;
 let unrealizedProfit=0;
 let tipoDePosicion ="Ninguna"
 let tipoDeMercado2H1H1M;
+//---------media Movil Suavizada------
+let arraySuavizadas1h=[];
+let promedioMovilSuave1h=[];
+let arraySuavizadas1m=[];
+let promedioMovilSuave1m=[];
+//--------alligator xperimental------
+let labios =[]
+let mandibula=[];
+let dientes=[];
+let promedioMobilAlliLabio=[];
+let promedioMobilAlliDiente=[] 
+let promedioMobilAlliMandibula=[]
+let arrayLabio= [];
+let arrayManbdibula=[];
+let arrayDiente=[];
+
+//-----------Gator---------
+let valoresPositivos=[];
+valoresPositivos[0]=0;
+valoresPositivos[1]=0;
+let valoresNegativos=[];
+valoresNegativos[0]=0
+valoresNegativos[1]=0
+let codigoColor=[];
+codigoColor[0]= "ignorar";
+codigoColor[1]="ignorar"
+
+//-----------DMI------------
+let DIpositivo=[]
+let DInegativo=[]
+let maxVelaAnt=[] 
+let minVelaAnt=[]
+let DMpositivo14d=[]
+let DMnegativo14d=[]
+let TR14=[]
+let cierreVelaAnt=[]
+let DX= [];
+let ADX=[]
+
 
 
 
@@ -173,6 +212,25 @@ valoresCalculo24hs = preciosCandles61de30m.slice(12);
 
 funciones.recoleccionDeDAtos(candels1m, maximosWilliam1m,61,14,2)
 funciones.recoleccionDeDAtos(candels1m, minimosWilliam1m,61,14,3)
+
+arraySuavizadas1h = [...valoresCalculo1hs]
+instrumentos.mediaMovilSuavizada(arraySuavizadas1h,promedioMovilSuave1h);
+
+let arraySuavizadoParaalligator1h=[];
+for (let i = 0; i < 61; i++) {
+    arraySuavizadoParaalligator1h.push((parseFloat(candels1m[i][2])+ parseFloat(candels1m[i][3]))/2)
+    
+}
+
+instrumentos.DMI(candels1m,DMpositivo14d,DMnegativo14d, DIpositivo, DInegativo, maxVelaAnt, minVelaAnt, cierreVelaAnt,TR14,DX, ADX)
+
+
+
+
+arrayDiente = arraySuavizadoParaalligator1h.slice(47);
+arrayManbdibula = arraySuavizadoParaalligator1h.slice(39);
+arrayLabio = arraySuavizadoParaalligator1h.slice(52);
+instrumentos.experimentalAlligator(labios,mandibula,dientes,promedioMobilAlliLabio, promedioMobilAlliDiente, promedioMobilAlliMandibula, arrayLabio,arrayDiente,arrayManbdibula)
 
 
 
@@ -242,9 +300,19 @@ histograma3m.push(MACDs3m[MACDs3m.length-1]-senial3m)
     
     let datos = JSON.parse(event.data)
     contadorVelasMinuto++
+    let contInicializadorMMS=0
     if(contadorVelasMinuto==2){
         contadorVelasMinuto=0;
+        while(contInicializadorMMS<4){
+            arraySuavizadas1m.push(parseFloat(datos.k.c))
+            contInicializadorMMS++
+        }
+        if(contInicializadorMMS==4){
+            instrumentos.mediaMovilSuavizada(arraySuavizadas1m, promedioMovilSuave1m, datos)
+        }
         valoresCalculoM.push(datos.k.c);
+        
+        
     }
     if(valoresCalculoM.length>61){
         valoresCalculoM.shift();
@@ -256,8 +324,14 @@ histograma3m.push(MACDs3m[MACDs3m.length-1]-senial3m)
     instrumentos.ATR(datos, ATRs, ATRcierreAnt);
     instrumentos.CCI(datos, CCIs, CCIpreciosTipicos14p)
     instrumentos.supertrendACtualiador(datos,upperLevel,lowerLevel,ATRs)
+    instrumentos.mediaMovilSuavizada(arraySuavizadas1h,promedioMovilSuave1h,datos);
+    instrumentos.experimentalAlligator(labios,mandibula,dientes,promedioMobilAlliLabio, promedioMobilAlliDiente, promedioMobilAlliMandibula, arrayLabio,arrayDiente,arrayManbdibula,datos)
+    instrumentos.gator(valoresPositivos, valoresNegativos, codigoColor, labios,mandibula,dientes);
+    instrumentos.DMI(datos,DMpositivo14d,DMnegativo14d, DIpositivo, DInegativo, maxVelaAnt, minVelaAnt, cierreVelaAnt,TR14,DX,ADX)
     
-        
+    
+
+
     valoresCalculo1hs.push(datos.k.c);
     valoresCalculo1hs.shift();
     mediaPonderada1H= instrumentos.mediaMovilPonderada(valoresCalculo1hs);
@@ -311,7 +385,7 @@ wsCandles3m.onmessage=(event)=>{
         
         instrumentos.estocasticoK(valoresEstocastico3m,ArrayEstocasticosRapidos3m, estocasticoKV3m);
         instrumentos.estocasticoD(ArrayEstocasticosRapidos3m, estocasticoDV3m);
-        instrumentos.comparadorEstocasticos(estocasticoKV3m, estocasticoDV3m, senialEstocastica3m);
+        instrumentos.comparadorEstocasticos(estocasticoKV3m, estocasticoDV3m, senialEstocastica3m)
 
         valoresMACDcorto3m.push(datos.k.c);
         valoresMACDcorto3m.shift();
@@ -370,8 +444,12 @@ wsCandles30m.onmessage=(event)=>{
 wsPrice.onmessage= (event) => {  //web socket tiene conexion constante y me envia la infoen el tiemp estipulado
    console.clear();
    
+   
 
     const datos = JSON.parse(event.data);
+
+   
+
     precio = parseFloat(datos.p);
     
     datosParaRSIminuto.push(precio);
@@ -432,7 +510,7 @@ wsPrice.onmessage= (event) => {  //web socket tiene conexion constante y me envi
     }
     else{
         
-        instrumentos.supertrendComparador(upperLevel, lowerLevel, precio, signalST);
+        instrumentos.supertrendComparador(upperLevel, lowerLevel, precio, signalST,controladorSeñales);
         valoresEstocastico.push(precio);
        
         valoresEstocastico.shift()
@@ -482,8 +560,8 @@ console.log(`---------------------------------------------${precio}-------------
 console.log(`24HS ----  Pmax: ${maximo24} ----Pmin: ${minimo24} ---- TENDENCIA: ${tendencia24Hs}-----MPond: ${mediaPonderada24H}`)
 console.log(`5HS ----  Pmax: ${maximo5} ----Pmin: ${minimo5} ---- TENDENCIA: ${tendencia5Hs}-----MPond: ${mediaPonderada5H}`)
 console.log(`2HS ----  Pmax: ${maximo2} ----Pmin: ${minimo2} ---- TENDENCIA: ${tendencia2Hs}-----MPond: ${mediaPonderada2H}`)
-console.log(`1HS ----  Pmax: ${maximo1} ----Pmin: ${minimo1} ---- TENDENCIA: ${tendencia1H} -----MPond: ${mediaPonderada1H}`)
-console.log(`1M ----  Pmax: ${maximoM} ----Pmin: ${minimoM} ---- TENDENCIA: ${tendenciaM} -----MPond: ${mediaPonderada1M}`)
+console.log(`1HS ----  Pmax: ${maximo1} ----Pmin: ${minimo1} ---- TENDENCIA: ${tendencia1H} -----MPond: ${mediaPonderada1H} --- MSuavizada 1H ${promedioMovilSuave1h}`)
+console.log(`1M ----  Pmax: ${maximoM} ----Pmin: ${minimoM} ---- TENDENCIA: ${tendenciaM} -----MPond: ${mediaPonderada1M}--- MSuavizada 1m ${promedioMovilSuave1m}`)
 console.log(`Entrada: ${precioDeEntrada}  |  Profit: ${unrealizedProfit}  |  Tipo de Posicion ${tipoDePosicion}  |  Pabierta : ${posicionAbierta}`);
 console.log(`---------------------------------------------- RSI -----------------------------------------------------`)
 console.log(`RSI Hora: ${RSIhora}  |  RSI minuto: ${RSIminuto} `)
@@ -506,7 +584,18 @@ console.log(`WPC 1m: ${WPC1m}`)
 console.log(`-------------------------ATR (volatilidad) 1m (14m)  y  CCI----------------------------------`)
 console.log(`ATR 1m: ${ATRs}  -----------------  CCI : ${CCIs}  ------------- SuperTrend : ${signalST}`)
 console.log(`upper : ${upperLevel} -- lower: ${lowerLevel} -- precio : ${precio}`)
-console.log(`control :  ${controladorSeñales}`)
+//console.log(`control :  ${controladorSeñales}`)
+console.log(`---------------------------Experimental Alligator---------------------------------------------`)
+console.log(`Mandibula : ${mandibula} ---- Dientes: ${dientes}----- Labios: ${labios}`)
+console.log(`--------------------------Gator---------------------------------`)
+console.log(`Positivos: ${valoresPositivos}`)
+console.log(`Negativos: ${valoresNegativos}`)
+console.log(`Cod color: ${codigoColor}`)
+console.log(`------------------------------DMI------------------`)
+console.log(`Positivos : ${DIpositivo}`)
+console.log(`Negativos : ${DInegativo}`)
+console.log(`ADX : ${ADX}`)
+console.log(`DX : ${DX}`)
 console.log(MACDs1m.length, MACDs1s.length, MACDs3m.length, valoresMACDcorto1m.length, valoresMACDcorto1s.length
     , valoresMACDcorto3m.length, valoresMACDlargo1m.length, valoresMACDlargo1s.length, valoresMACDlargo3m.length, histograma1m.length,
     histograma1s.length, histograma3m.length)
